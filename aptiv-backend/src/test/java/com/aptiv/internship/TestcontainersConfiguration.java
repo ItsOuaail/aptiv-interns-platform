@@ -1,4 +1,4 @@
-package com.aptiv.interns;
+package com.aptiv.internship;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

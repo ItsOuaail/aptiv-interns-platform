@@ -1,4 +1,4 @@
-package com.aptiv.interns;
+package com.aptiv.internship;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
