@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,11 +24,13 @@ public class InternController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<InternResponse> getInternById(@PathVariable Long id) {
         return ResponseEntity.ok(internService.getInternById(id));
     }
 
     @GetMapping
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('HR')")
     public ResponseEntity<Page<InternResponse>> getAllInterns(Pageable pageable) {
         return ResponseEntity.ok(internService.getAllInterns(pageable));
