@@ -14,7 +14,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -59,9 +62,59 @@ public class InternService {
 
     private User getCurrentUser() {
         Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        // Extract user information from JWT
         String email = jwt.getClaimAsString("email");
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+        String firstName = jwt.getClaimAsString("given_name");
+        String lastName = jwt.getClaimAsString("family_name");
+        String keycloakId = jwt.getClaimAsString("sub");
+        String fullName = jwt.getClaimAsString("name");
+        String preferredUsername = jwt.getClaimAsString("preferred_username");
+
+        // Extract roles from JWT to determine user role
+        List<String> roles = extractRolesFromJwt(jwt);
+
+        // Try to find user in database
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            return userOptional.get();
+        } else {
+            // User doesn't exist in database, create them automatically
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setFirstName(firstName != null ? firstName : "Unknown");
+            newUser.setLastName(lastName != null ? lastName : "User");
+            newUser.setKeycloakId(keycloakId);
+            //newUser.setUsername(preferredUsername != null ? preferredUsername : email);
+
+            // Set role based on JWT roles
+            if (roles.contains("HR")) {
+                newUser.setRole(User.Role.HR);
+            } else if (roles.contains("INTERN")) {
+                newUser.setRole(User.Role.INTERN);
+            } else {
+                // Default to INTERN if no specific role found
+                newUser.setRole(User.Role.INTERN);
+            }
+
+            newUser.setCreatedAt(LocalDateTime.now());
+            newUser.setUpdatedAt(LocalDateTime.now());
+
+            // Save and return the new user
+            User savedUser = userRepository.save(newUser);
+            System.out.println("Created new user: " + savedUser.getEmail() + " - " + savedUser.getFirstName() + " " + savedUser.getLastName() + " with role: " + savedUser.getRole());
+            return savedUser;
+        }
+    }
+
+    private List<String> extractRolesFromJwt(Jwt jwt) {
+        // Extract roles from realm_access
+        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+        if (realmAccess != null && realmAccess.containsKey("roles")) {
+            return (List<String>) realmAccess.get("roles");
+        }
+        return List.of(); // Return empty list if no roles found
     }
 
     private InternResponse convertToResponse(Intern intern) {
