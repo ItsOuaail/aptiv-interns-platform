@@ -13,7 +13,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:aptiv_internship}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
 
   # JPA Configuration
@@ -27,19 +27,20 @@ spring:
         format_sql: true
     open-in-view: false
 
-  # Security Configuration
+  # Security Configuration (Updated for Keycloak)
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/aptiv}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/aptiv}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/aptiv/protocol/openid-connect/certs}
 
   # Mail Configuration
   mail:
     host: ${MAIL_HOST:smtp.office365.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:dev-email@example.com}
+    password: ${MAIL_PASSWORD:dev-password}
     properties:
       mail:
         smtp:
@@ -59,11 +60,25 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-# Logging
+# Swagger Configuration
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    oauth:
+      client-id: internship-management
+      client-secret: ${KEYCLOAK_CLIENT_SECRET:EVwBF1BfuPidUqGMjNosqByT04i4jIWT}
+      scopes: openid profile email
+      auth-server: http://localhost:8180/realms/aptiv/protocol/openid-connect/auth
+      use-pkce-with-authorization-code-grant: true
+
+# Logging - Enhanced for debugging
 logging:
   level:
     com.aptiv.internship: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 # Management
 management:

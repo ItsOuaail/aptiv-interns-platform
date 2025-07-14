@@ -2,18 +2,23 @@ package com.aptiv.internship.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -30,8 +35,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/test/public").permitAll()
+                        .requestMatchers("/test/auth").authenticated()
 
-                        // HR endpoints
+                        // HR endpoints - Note: No /api prefix needed since context-path handles it
                         .requestMatchers(HttpMethod.GET, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns").hasRole("HR")
                         .requestMatchers(HttpMethod.PUT, "/interns/**").hasRole("HR")
@@ -62,14 +69,48 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
-        authoritiesConverter.setAuthoritiesClaimName("roles");
+    public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
+        return new Converter<Jwt, AbstractAuthenticationToken>() {
+            @Override
+            public AbstractAuthenticationToken convert(Jwt jwt) {
+                Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
+                return new JwtAuthenticationToken(jwt, authorities);
+            }
+        };
+    }
 
-        JwtAuthenticationConverter authenticationConverter = new JwtAuthenticationConverter();
-        authenticationConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-        return authenticationConverter;
+    private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
+        Set<String> roles = new HashSet<>();
+
+        // Extract roles from realm_access
+        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+        if (realmAccess != null && realmAccess.containsKey("roles")) {
+            List<String> realmRoles = (List<String>) realmAccess.get("roles");
+            if (realmRoles != null) {
+                roles.addAll(realmRoles);
+            }
+        }
+
+        // Extract roles from resource_access (if any)
+        Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
+        if (resourceAccess != null) {
+            Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get("internship-management");
+            if (clientAccess != null && clientAccess.containsKey("roles")) {
+                List<String> clientRoles = (List<String>) clientAccess.get("roles");
+                if (clientRoles != null) {
+                    roles.addAll(clientRoles);
+                }
+            }
+        }
+
+        // Debug logging
+        System.out.println("JWT Subject: " + jwt.getSubject());
+        System.out.println("JWT Claims: " + jwt.getClaims());
+        System.out.println("Extracted roles: " + roles);
+
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toList());
     }
 
     @Bean

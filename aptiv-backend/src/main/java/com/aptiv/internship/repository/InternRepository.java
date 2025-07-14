@@ -59,4 +59,6 @@ public interface InternRepository extends JpaRepository<Intern, Long> {
             @Param("status") Intern.InternshipStatus status,
             Pageable pageable
     );
+
+    List<Intern> findByEndDateBetween(LocalDate localDate, LocalDate localDate1);
 }
