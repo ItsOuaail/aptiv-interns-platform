@@ -37,6 +37,7 @@ public class InternController {
     }
 
     @GetMapping("/my")
+    @Transactional(readOnly = true)
     @PreAuthorize("hasRole('INTERN')")
     public ResponseEntity<InternResponse> getMyInternProfile() {
         return ResponseEntity.ok(internService.getCurrentInternProfile());
