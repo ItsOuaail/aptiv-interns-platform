@@ -1,8 +1,6 @@
 package com.aptiv.internship.config;
 
-import com.aptiv.internship.config.JWTAuthenticationFilter;
-import com.aptiv.internship.service.CustomUserDetailsService; // Interface
-import com.aptiv.internship.util.JwtUtil;
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,11 +24,11 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JWTAuthenticationFilter jwtAuthenticationFilter;
-    private final UserDetailsService userDetailsService; // Injecte CustomUserDetailsService
+    private final UserDetailsService userDetailsService;
+    private final JWTAuthenticationFilter jwtAuthenticationFilter; // Add this field
 
     public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter; // Store it
         this.userDetailsService = userDetailsService;
     }
 
@@ -41,7 +39,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
@@ -61,10 +59,11 @@ public class SecurityConfig {
                         .requestMatchers("/attendance/checkout").hasRole("INTERN")
                         .requestMatchers("/notifications/**").authenticated()
                         .requestMatchers("/messages/my").authenticated()
-                        .requestMatchers("/api/auth/profile").authenticated()
+                        .requestMatchers("/auth/profile").authenticated()
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+        // You can uncomment this line now that jwtAuthenticationFilter is properly stored
+        // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

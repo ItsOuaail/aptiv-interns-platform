@@ -1,5 +1,6 @@
 package com.aptiv.internship.controller;
 
+import com.aptiv.internship.dto.request.LoginRequest;
 import com.aptiv.internship.util.JwtUtil;
 import com.aptiv.internship.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")  // Changed from "/api/auth"
 @RequiredArgsConstructor
 public class AuthController {
-
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
@@ -24,7 +24,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
         );
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtUtil.generateToken(userDetails);
@@ -35,14 +35,9 @@ public class AuthController {
     public User getCurrentUser(@AuthenticationPrincipal User user) {
         return user;
     }
+
+    public UserDetailsService getUserDetailsService() {
+        return userDetailsService;
+    }
 }
 
-class LoginRequest {
-    private String username;
-    private String password;
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-}
