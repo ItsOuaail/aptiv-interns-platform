@@ -104,6 +104,10 @@ public class User implements UserDetails {
         return active;
     }
 
+    public Object isActive() {
+        return active;
+    }
+
     public enum Role {
         HR, INTERN
     }

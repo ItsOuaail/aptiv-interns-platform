@@ -19,7 +19,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User createUserIfNotExists(String email, String firstName, String lastName, String role, String plainPassword) {
+    public User createUserIfNotExists(String email, String firstName, String lastName, String plainPassword, String role ) {
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             return existingUser.get();

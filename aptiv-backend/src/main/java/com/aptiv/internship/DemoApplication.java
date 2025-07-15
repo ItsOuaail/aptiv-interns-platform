@@ -19,11 +19,11 @@ public class DemoApplication {
 		return args -> {
 			// Create a default HR user if it doesn't exist
 			User hrUser = userService.createUserIfNotExists(
-					"hr@example.com",
-					"Admin",
-					"HR",
-					"HR",
-					"adminpass" // Plain text password to be hashed
+					"ouaail@example.com",
+					"ouaail",
+					"elaouad",
+					"adminpass",// Plain text password to be hashed
+					"HR"
 			);
 			System.out.println("Default HR user created or already exists: " + hrUser.getEmail() + " with role: " + hrUser.getRole());
 		};
