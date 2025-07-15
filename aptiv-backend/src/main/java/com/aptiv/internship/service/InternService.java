@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -61,18 +61,7 @@ public class InternService {
     }
 
     private User getCurrentUser() {
-        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        // Extract user information from JWT
-        String email = jwt.getClaimAsString("email");
-        String firstName = jwt.getClaimAsString("given_name");
-        String lastName = jwt.getClaimAsString("family_name");
-        String keycloakId = jwt.getClaimAsString("sub");
-        String fullName = jwt.getClaimAsString("name");
-        String preferredUsername = jwt.getClaimAsString("preferred_username");
-
-        // Extract roles from JWT to determine user role
-        List<String> roles = extractRolesFromJwt(jwt);
+        String email = getCurrentUserEmail();
 
         // Try to find user in database
         Optional<User> userOptional = userRepository.findByEmail(email);
@@ -83,19 +72,19 @@ public class InternService {
             // User doesn't exist in database, create them automatically
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setFirstName(firstName != null ? firstName : "Unknown");
-            newUser.setLastName(lastName != null ? lastName : "User");
-            newUser.setKeycloakId(keycloakId);
-            //newUser.setUsername(preferredUsername != null ? preferredUsername : email);
+            newUser.setFirstName("Unknown"); // Default if not in JWT
+            newUser.setLastName("User");     // Default if not in JWT
+            //newUser.setKeycloakId(null);     // Remove if not needed
+            //newUser.setUsername(email);      // Remove if username is email
 
-            // Set role based on JWT roles
+            // Set role based on a simplified approach (adjust based on your JWT)
+            List<String> roles = extractRolesFromContext(); // Custom role extraction
             if (roles.contains("HR")) {
                 newUser.setRole(User.Role.HR);
             } else if (roles.contains("INTERN")) {
                 newUser.setRole(User.Role.INTERN);
             } else {
-                // Default to INTERN if no specific role found
-                newUser.setRole(User.Role.INTERN);
+                newUser.setRole(User.Role.INTERN); // Default role
             }
 
             newUser.setCreatedAt(LocalDateTime.now());
@@ -108,13 +97,21 @@ public class InternService {
         }
     }
 
-    private List<String> extractRolesFromJwt(Jwt jwt) {
-        // Extract roles from realm_access
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess != null && realmAccess.containsKey("roles")) {
-            return (List<String>) realmAccess.get("roles");
-        }
-        return List.of(); // Return empty list if no roles found
+    private String getCurrentUserEmail() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userDetails.getUsername(); // Assuming email is the username
+    }
+
+    private List<String> extractRolesFromContext() {
+        // This is a placeholder; adjust based on how roles are stored in your custom JWT
+        // Example: If roles are in a custom claim, access them via JwtUtil or Authentication
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        // If roles are part of UserDetails authorities, convert them
+        return userDetails.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .map(authority -> authority.substring(5)) // Remove "ROLE_" prefix
+                .toList();
     }
 
     private InternResponse convertToResponse(Intern intern) {

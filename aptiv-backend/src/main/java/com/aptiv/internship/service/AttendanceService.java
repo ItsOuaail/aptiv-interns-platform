@@ -8,7 +8,7 @@ import com.aptiv.internship.repository.AttendanceRepository;
 import com.aptiv.internship.repository.InternRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -52,13 +52,14 @@ public class AttendanceService {
     }
 
     private Intern getCurrentIntern() {
-        return internRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", getCurrentUserEmail()));
+        String email = getCurrentUserEmail();
+        return internRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", email));
     }
 
     private String getCurrentUserEmail() {
-        return ((Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                .getClaimAsString("email");
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userDetails.getUsername(); // Assuming email is the username
     }
 
     private AttendanceResponse convertToResponse(Attendance attendance) {

@@ -28,12 +28,7 @@ spring:
     open-in-view: false
 
   # Security Configuration (Updated for Keycloak)
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/aptiv}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/aptiv/protocol/openid-connect/certs}
+
 
   # Mail Configuration
   mail:

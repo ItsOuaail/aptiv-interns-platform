@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -33,10 +33,14 @@ public class NotificationService {
     }
 
     private User getCurrentUser() {
-        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String email = jwt.getClaimAsString("email");
+        String email = getCurrentUserEmail();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+    }
+
+    private String getCurrentUserEmail() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userDetails.getUsername(); // Assuming email is the username
     }
 
     private NotificationResponse convertToResponse(Notification notification) {
@@ -61,6 +65,5 @@ public class NotificationService {
         notification.setType(notificationType);
         notification.setUser(user);
         notificationRepository.save(notification);
-
     }
 }

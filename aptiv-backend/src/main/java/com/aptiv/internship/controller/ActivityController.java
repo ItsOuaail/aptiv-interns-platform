@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/activities")
-@RequiredArgsConstructor
 public class ActivityController {
-    private final ActivityService activityService;
+    private final ActivityService activityService;// Should be autowired by @RequiredArgsConstructor
+    public ActivityController(ActivityService activityService) {
+        this.activityService = activityService;
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('INTERN')")

@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -71,13 +71,14 @@ public class DocumentService {
     }
 
     private Intern getCurrentIntern() {
-        return internRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", getCurrentUserEmail()));
+        String email = getCurrentUserEmail();
+        return internRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", email));
     }
 
     private String getCurrentUserEmail() {
-        return ((Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                .getClaimAsString("email");
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userDetails.getUsername(); // Assuming email is the username
     }
 
     private DocumentResponse convertToResponse(Document document) {
