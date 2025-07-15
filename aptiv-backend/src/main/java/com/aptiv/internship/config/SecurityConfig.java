@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/test/auth").authenticated()
                         .requestMatchers(HttpMethod.GET, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns").hasRole("HR")
+                        .requestMatchers(HttpMethod.POST, "/interns/batch").hasRole("HR")
                         .requestMatchers(HttpMethod.PUT, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.DELETE, "/interns/**").hasRole("HR")
                         .requestMatchers("/messages/send").hasRole("HR")

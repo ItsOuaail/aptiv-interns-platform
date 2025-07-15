@@ -13,7 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
+import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,42 @@ public class InternService {
         User user = getCurrentUser();
         return convertToResponse(internRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", user.getEmail())));
+    }
+
+    @Transactional
+    public void createInternsBatch(List<InternRequest> requests, User hrUser) {
+        List<Intern> interns = requests.stream()
+                .map(this::mapToEntity)
+                .peek(intern -> intern.setUser(hrUser)) // Associate with HR user
+                .collect(Collectors.toList());
+        internRepository.saveAll(interns); // Batch save
+    }
+
+    private Intern mapToEntity(InternRequest request) {
+        return Intern.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .university(request.getUniversity())
+                .major(request.getMajor())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .supervisor(request.getSupervisor())
+                .department(request.getDepartment())
+                .status(Intern.InternshipStatus.ACTIVE) // Default status
+                .build();
+    }
+
+    private InternResponse mapToResponse(Intern intern) {
+        // Placeholder for response mapping based on your InternResponse DTO
+        return InternResponse.builder()
+                .id(intern.getId())
+                .firstName(intern.getFirstName())
+                .lastName(intern.getLastName())
+                .email(intern.getEmail())
+                // Add other fields as needed
+                .build();
     }
 
     private User getCurrentUser() {

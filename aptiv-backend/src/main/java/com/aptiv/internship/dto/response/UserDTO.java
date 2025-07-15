@@ -21,6 +21,6 @@ public class UserDTO {
         this.lastName = lastName;
         this.role = role.toString();
         this.active = (Boolean) active;
-        
+
     }
 }
