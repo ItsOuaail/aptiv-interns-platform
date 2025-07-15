@@ -61,9 +61,9 @@ public class SecurityConfig {
                         .requestMatchers("/messages/my").authenticated()
                         .requestMatchers("/auth/profile").authenticated()
                         .anyRequest().authenticated()
-                );
+                )
         // You can uncomment this line now that jwtAuthenticationFilter is properly stored
-        // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
