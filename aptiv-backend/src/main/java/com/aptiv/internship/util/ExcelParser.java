@@ -13,6 +13,11 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
+
+import static org.apache.poi.ss.usermodel.CellType.*;
 
 @Component
 public class ExcelParser {
@@ -53,10 +58,31 @@ public class ExcelParser {
         InternRequest request = new InternRequest();
         for (int i = 0; i < headers.size(); i++) {
             Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-            String header = headers.get(i).toLowerCase();
+            String header = headers.get(i).trim().toLowerCase();
             String cellValue = getCellValueAsString(cell);
 
             switch (header) {
+                case "first name":
+                    if (cellValue.isEmpty()) {
+                        throw new IllegalArgumentException("First name is required in row " + (row.getRowNum() + 1));
+                    }
+                    request.setFirstName(cellValue);
+                    break;
+                case "last name":
+                    request.setLastName(cellValue); // Optional
+                    break;
+                case "email":
+                    request.setEmail(cellValue); // Optional
+                    break;
+                case "phone":
+                    request.setPhone(cellValue); // Optional
+                    break;
+                case "university":
+                    request.setUniversity(cellValue); // Optional
+                    break;
+                case "major":
+                    request.setMajor(cellValue); // Optional
+                    break;
                 case "start date":
                     if (cellValue.isEmpty()) {
                         throw new IllegalArgumentException("Start date is required in row " + (row.getRowNum() + 1));
@@ -64,7 +90,7 @@ public class ExcelParser {
                     try {
                         request.setStartDate(LocalDate.parse(cellValue));
                     } catch (DateTimeParseException e) {
-                        throw new IllegalArgumentException("Invalid start date format in row " + (row.getRowNum() + 1) + ": " + cellValue);
+                        throw new IllegalArgumentException("Invalid start date format in row " + (row.getRowNum() + 1));
                     }
                     break;
                 case "end date":
@@ -74,16 +100,18 @@ public class ExcelParser {
                     try {
                         request.setEndDate(LocalDate.parse(cellValue));
                     } catch (DateTimeParseException e) {
-                        throw new IllegalArgumentException("Invalid end date format in row " + (row.getRowNum() + 1) + ": " + cellValue);
+                        throw new IllegalArgumentException("Invalid end date format in row " + (row.getRowNum() + 1));
                     }
                     break;
-                case "first name":
+                case "supervisor":
+                    request.setSupervisor(cellValue); // Optional
+                    break;
+                case "department":
                     if (cellValue.isEmpty()) {
-                        throw new IllegalArgumentException("First name is required in row " + (row.getRowNum() + 1));
+                        throw new IllegalArgumentException("Department is required in row " + (row.getRowNum() + 1));
                     }
-                    request.setFirstName(cellValue);
+                    request.setDepartment(cellValue);
                     break;
-                // Add similar checks for other required fields (e.g., last name, email, etc.)
                 default:
                     // Ignore unrecognized headers
             }
@@ -92,18 +120,21 @@ public class ExcelParser {
     }
 
     private String getCellValueAsString(Cell cell) {
+        if (cell == null) {
+            return ""; // Return empty string for null cells
+        }
         switch (cell.getCellType()) {
             case STRING:
-                return cell.getStringCellValue().trim();
+                return cell.getStringCellValue().trim(); // Extract string values
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                    return cell.getLocalDateTimeCellValue().toLocalDate().toString(); // Handle dates
                 }
-                return String.valueOf((int) cell.getNumericCellValue());
+                return String.valueOf(cell.getNumericCellValue()); // Handle numbers
             case BLANK:
-                return "";
+                return ""; // Return empty string for blank cells
             default:
-                return "";
+                return ""; // Fallback for unhandled types
         }
     }
 }

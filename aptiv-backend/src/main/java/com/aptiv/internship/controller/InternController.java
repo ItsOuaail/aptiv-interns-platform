@@ -24,7 +24,7 @@ import java.util.List;
 public class InternController {
 
     private final InternService internService;
-    private final ExcelParser excelParser; // Add this dependency
+    private final ExcelParser excelParser;
 
     @PostMapping
     @PreAuthorize("hasRole('HR')")
@@ -66,5 +66,18 @@ public class InternController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
         }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<InternResponse> updateIntern(@PathVariable Long id, @RequestBody InternRequest request) {
+        return ResponseEntity.ok(internService.updateIntern(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Void> deleteIntern(@PathVariable Long id) {
+        internService.deleteIntern(id);
+        return ResponseEntity.noContent().build();
     }
 }
