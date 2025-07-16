@@ -1,12 +1,14 @@
 package com.aptiv.internship.service;
 
 import com.aptiv.internship.dto.response.NotificationResponse;
+import com.aptiv.internship.entity.Intern;
 import com.aptiv.internship.entity.Notification;
 import com.aptiv.internship.entity.User;
 import com.aptiv.internship.exception.ResourceNotFoundException;
 import com.aptiv.internship.repository.NotificationRepository;
 import com.aptiv.internship.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -57,13 +59,25 @@ public class NotificationService {
         return response;
     }
 
-    public void createNotification(String subject, String message, Notification.NotificationType notificationType, User user, Long id) {
-        Notification notification = new Notification();
-        notification.setId(id);
-        notification.setTitle(subject);
-        notification.setMessage(message);
-        notification.setType(notificationType);
-        notification.setUser(user);
-        notificationRepository.save(notification);
+    public void createNotification(String subject, String message, Notification.NotificationType notificationType, User user, Intern intern) {
+        // Check if notification already exists to prevent duplicates
+        boolean exists = notificationRepository.existsByInternAndTypeAndMessage(intern, notificationType, message);
+
+        if (!exists) {
+            Notification notification = new Notification();
+            // DO NOT set the ID - let it be auto-generated
+            notification.setTitle(subject);
+            notification.setMessage(message);
+            notification.setType(notificationType);
+            notification.setUser(user);
+            notification.setIntern(intern); // Set the intern relationship
+
+            try {
+                notificationRepository.save(notification);
+            } catch (Exception e) {
+                Logger log = null;
+                log.error("Failed to save notification for intern {}: {}", intern.getId(), e.getMessage());
+            }
+        }
     }
 }

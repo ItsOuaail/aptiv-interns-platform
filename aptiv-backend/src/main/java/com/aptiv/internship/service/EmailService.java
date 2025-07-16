@@ -37,7 +37,7 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    @Scheduled(cron = "0 0 9 * * ?") // Daily at 9 AM
+    @Scheduled(cron = "0 56 21 * * ?") // Daily at 9 AM
     public void checkInternshipEndDates() {
         LocalDate today = LocalDate.now();
         List<Intern> endingSoon = internRepository.findByEndDateBetween(
@@ -60,13 +60,13 @@ public class EmailService {
                 // Notify HR
                 sendEmail(hrEmail, subject, message);
 
-                // Save notification
+                // Save notification - pass the intern object instead of just the ID
                 notificationService.createNotification(
                         subject,
                         message,
                         Notification.NotificationType.INTERNSHIP_ENDING,
                         intern.getUser(),
-                        intern.getId()
+                        intern // Pass the intern object, not intern.getId()
                 );
             }
         }

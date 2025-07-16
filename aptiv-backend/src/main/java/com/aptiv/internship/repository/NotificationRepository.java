@@ -43,4 +43,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     );
 
     void deleteByCreatedAtBefore(LocalDateTime date);
+    boolean existsByInternAndTypeAndMessage(Intern intern, Notification.NotificationType type, String message);
+
+    // Alternative method if you prefer to check by intern ID
+    boolean existsByInternIdAndTypeAndMessage(Long internId, Notification.NotificationType type, String message);
 }

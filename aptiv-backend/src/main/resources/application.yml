@@ -2,6 +2,7 @@ server:
   port: 8080
   servlet:
     context-path: /api
+
 jwt:
   secret: VGhpcyBpcyBhIHNlY3VyZSBrZXkgZm9yIgRtMjU2IGFsZ29yaXRobQ==
 
@@ -28,16 +29,19 @@ spring:
     open-in-view: false
 
   mail:
-    host: ${MAIL_HOST:smtp.office365.com}
+    host: ${MAIL_HOST:smtp.gmail.com}  # Changed from smtp.office365.com
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:dev-email@example.com}
-    password: ${MAIL_PASSWORD:dev-password}
+    username: ${MAIL_USERNAME:ouaailelaouad@gmail.com}
+    password: ${MAIL_PASSWORD:dcuj sbrx jyxw tien}  # Use app password, not regular password
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true  # Added this for Gmail
+          ssl:
+            trust: smtp.gmail.com  # Added for Gmail
 
   servlet:
     multipart:
@@ -67,6 +71,7 @@ logging:
     org.springframework.web: DEBUG
     org.springframework.web.servlet.DispatcherServlet: DEBUG
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    org.springframework.mail: DEBUG  # Added to debug email issues
 
 management:
   endpoints:
@@ -83,4 +88,4 @@ aptiv:
     notification:
       days-before-end: 30,7,1
       max-consecutive-absences: 5
-    hr-email: ${HR_EMAIL:hr@aptiv.com}
+    hr-email: ${HR_EMAIL:elaouad.ouaail@etu.uae.ac.ma}
