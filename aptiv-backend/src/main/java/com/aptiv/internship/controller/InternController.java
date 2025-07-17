@@ -5,7 +5,9 @@ import com.aptiv.internship.dto.request.BroadcastMessageRequest;
 import com.aptiv.internship.dto.request.InternRequest;
 import com.aptiv.internship.dto.request.MessageRequest;
 import com.aptiv.internship.dto.response.InternResponse;
+import com.aptiv.internship.dto.response.InternSearchResponseDTO;
 import com.aptiv.internship.dto.response.MessageResponse;
+import com.aptiv.internship.entity.Intern;
 import com.aptiv.internship.entity.User;
 import com.aptiv.internship.service.InternService;
 import com.aptiv.internship.util.ExcelParser;
@@ -13,6 +15,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -46,8 +51,110 @@ public class InternController {
     @GetMapping
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('HR')")
-    public ResponseEntity<Page<InternResponse>> getAllInterns(Pageable pageable) {
+    public ResponseEntity<Page<InternResponse>> getAllInterns(
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
         return ResponseEntity.ok(internService.getAllInterns(pageable));
+    }
+
+    /**
+     * Advanced search with multiple filters
+     */
+    @GetMapping("/search")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Page<InternResponse>> searchInterns(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String university,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String supervisor,
+            @RequestParam(required = false) Intern.InternshipStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateTo,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        Page<InternResponse> results = (Page<InternResponse>) internService.searchInterns(
+                keyword, department, university, major, supervisor, status,
+                startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
+
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Simple keyword search
+     */
+    @GetMapping("/search/keyword")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public Page<InternSearchResponseDTO> searchByKeyword(
+            @RequestParam String keyword,
+            Pageable pageable) {
+
+        Page<Intern> interns = internService.searchByKeyword(keyword, pageable);
+        return interns.map(this::convertToDTO);
+    }
+    private InternSearchResponseDTO convertToDTO(Intern intern) {
+        InternSearchResponseDTO dto = new InternSearchResponseDTO();
+        dto.setId(intern.getId());
+        dto.setFirstName(intern.getFirstName());
+        dto.setLastName(intern.getLastName());
+        dto.setEmail(intern.getEmail());
+        
+        // ... set other fields
+        return dto;
+    }
+    /**
+     * Search by department
+     */
+    @GetMapping("/search/department")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Page<InternResponse>> searchByDepartment(
+            @RequestParam String department,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        return ResponseEntity.ok(internService.getInternsByDepartment(department, pageable));
+    }
+
+    /**
+     * Search by university
+     */
+    @GetMapping("/search/university")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Page<InternResponse>> searchByUniversity(
+            @RequestParam String university,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        return ResponseEntity.ok(internService.getInternsByUniversity(university, pageable));
+    }
+
+    /**
+     * Search by status
+     */
+    @GetMapping("/search/status")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Page<InternResponse>> searchByStatus(
+            @RequestParam Intern.InternshipStatus status,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        return ResponseEntity.ok(internService.getInternsByStatus(status, pageable));
+    }
+
+    /**
+     * Search by supervisor
+     */
+    @GetMapping("/search/supervisor")
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<Page<InternResponse>> searchBySupervisor(
+            @RequestParam String supervisor,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        return ResponseEntity.ok(internService.getInternsBySupervisor(supervisor, pageable));
     }
 
     @GetMapping("/my")
