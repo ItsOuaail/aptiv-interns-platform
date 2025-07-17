@@ -61,4 +61,5 @@ public interface InternRepository extends JpaRepository<Intern, Long> {
     );
 
     List<Intern> findByEndDateBetween(LocalDate localDate, LocalDate localDate1);
+
 }

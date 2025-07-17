@@ -1,13 +1,19 @@
 package com.aptiv.internship.service;
 
 import com.aptiv.internship.dto.request.InternRequest;
+import com.aptiv.internship.dto.request.MessageRequest;
 import com.aptiv.internship.dto.response.InternResponse;
+import com.aptiv.internship.dto.response.MessageResponse;
 import com.aptiv.internship.entity.Intern;
+import com.aptiv.internship.entity.Notification;
 import com.aptiv.internship.entity.User;
 import com.aptiv.internship.exception.ResourceNotFoundException;
 import com.aptiv.internship.repository.InternRepository;
 import com.aptiv.internship.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,15 +22,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InternService {
     private final InternRepository internRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public InternResponse createIntern(InternRequest request) {
         User hrUser = getCurrentUser();
@@ -184,5 +194,118 @@ public class InternService {
                 .filter(authority -> authority.startsWith("ROLE_"))
                 .map(authority -> authority.substring(5))
                 .toList();
+    }
+    @Transactional
+    public MessageResponse sendMessageToIntern(MessageRequest request) {
+        // Get current HR user
+        User hrUser = getCurrentUser();
+
+        // Find the intern
+        Intern intern = internRepository.findById(request.getInternId())
+                .orElseThrow(() -> new ResourceNotFoundException("Intern", "id", request.getInternId()));
+
+        // Prepare email content
+        String emailSubject = "[Internship Message] " + request.getSubject();
+        String emailBody = buildEmailBody(request.getContent(), hrUser, intern);
+
+        try {
+            // Send email
+            emailService.sendEmail(intern.getEmail(), emailSubject, emailBody);
+
+            // Create notification
+            Notification notification = notificationService.createNotification(
+                    request.getSubject(),
+                    request.getContent(),
+                    Notification.NotificationType.MESSAGE_FROM_HR,
+                    intern.getUser(),
+                    intern
+            );
+
+            // Build response
+            MessageResponse response = new MessageResponse();
+            response.setId(notification.getId());
+            response.setSubject(request.getSubject());
+            response.setContent(request.getContent());
+            response.setIsRead(false);
+            response.setSentAt(LocalDateTime.now());
+            response.setInternId(intern.getId());
+            response.setInternName(intern.getFirstName() + " " + intern.getLastName());
+            response.setSenderId(hrUser.getId());
+            response.setSenderName(hrUser.getFirstName() + " " + hrUser.getLastName());
+
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send message to multiple interns
+     */
+    @Transactional
+    public List<MessageResponse> sendMessageToMultipleInterns(List<Long> internIds, String subject, String content) {
+        List<MessageResponse> responses = new ArrayList<>();
+
+        for (Long internId : internIds) {
+            try {
+                MessageRequest request = new MessageRequest();
+                request.setInternId(internId);
+                request.setSubject(subject);
+                request.setContent(content);
+
+                MessageResponse response = sendMessageToIntern(request);
+                responses.add(response);
+
+            } catch (Exception e) {
+                // Create error response
+                MessageResponse errorResponse = new MessageResponse();
+                errorResponse.setInternId(internId);
+                errorResponse.setSubject(subject);
+                errorResponse.setContent("ERROR: " + e.getMessage());
+                errorResponse.setSentAt(LocalDateTime.now());
+                responses.add(errorResponse);
+            }
+        }
+
+        return responses;
+    }
+
+    /**
+     * Get all active intern IDs for broadcast messaging
+     */
+    public List<Long> getAllActiveInternIds() {
+        return internRepository.findByStatus(Intern.InternshipStatus.ACTIVE)
+                .stream()
+                .map(Intern::getId)
+                .collect(Collectors.toList());
+    }
+
+    private String buildEmailBody(String content, User hrUser, Intern intern) {
+        return String.format("""
+            Dear %s %s,
+            
+            You have received a message from %s %s (HR Department):
+            
+            %s
+            
+            ---
+            
+            Best regards,
+            %s %s
+            HR Department
+            Email: %s
+            
+            This is an automated message from the Internship Management System.
+            """,
+                intern.getFirstName(),
+                intern.getLastName(),
+                hrUser.getFirstName(),
+                hrUser.getLastName(),
+                content,
+                hrUser.getFirstName(),
+                hrUser.getLastName(),
+                hrUser.getEmail()
+        );
     }
 }

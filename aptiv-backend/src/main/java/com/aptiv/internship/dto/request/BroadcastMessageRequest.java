@@ -1,14 +1,11 @@
 package com.aptiv.internship.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class MessageRequest {
-
-    //@NotNull(message = "Intern ID is required")
-    private Long internId;
-
+public class BroadcastMessageRequest {
     @NotBlank(message = "Subject is required")
     @Size(min = 5, max = 200, message = "Subject must be between 5 and 200 characters")
     private String subject;

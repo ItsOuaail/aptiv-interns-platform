@@ -48,6 +48,10 @@ public class Notification {
     private Intern intern;
 
     public enum NotificationType {
-        INTERNSHIP_ENDING, ABSENCE_ALERT, DOCUMENT_UPLOADED, ACTIVITY_REMINDER
+        INTERNSHIP_ENDING,
+        ABSENCE_ALERT,
+        DOCUMENT_UPLOADED,
+        ACTIVITY_REMINDER,
+        MESSAGE_FROM_HR  // Add this new type
     }
 }

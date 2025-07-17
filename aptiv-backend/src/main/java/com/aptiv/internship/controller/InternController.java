@@ -1,10 +1,15 @@
 package com.aptiv.internship.controller;
 
+import com.aptiv.internship.dto.request.BatchMessageRequest;
+import com.aptiv.internship.dto.request.BroadcastMessageRequest;
 import com.aptiv.internship.dto.request.InternRequest;
+import com.aptiv.internship.dto.request.MessageRequest;
 import com.aptiv.internship.dto.response.InternResponse;
+import com.aptiv.internship.dto.response.MessageResponse;
 import com.aptiv.internship.entity.User;
 import com.aptiv.internship.service.InternService;
 import com.aptiv.internship.util.ExcelParser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -79,5 +84,55 @@ public class InternController {
     public ResponseEntity<Void> deleteIntern(@PathVariable Long id) {
         internService.deleteIntern(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/message")
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<MessageResponse> sendMessageToIntern(
+            @PathVariable Long id,
+            @RequestBody @Valid MessageRequest request) {
+
+        // Override the internId with the path variable to ensure consistency
+        request.setInternId(id);
+
+        MessageResponse response = internService.sendMessageToIntern(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Send message to multiple interns
+     */
+    @PostMapping("/message/batch")
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<List<MessageResponse>> sendMessageToMultipleInterns(
+            @RequestBody @Valid BatchMessageRequest request) {
+
+        List<MessageResponse> responses = internService.sendMessageToMultipleInterns(
+                request.getInternIds(),
+                request.getSubject(),
+                request.getContent()
+        );
+
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Send message to all active interns
+     */
+    @PostMapping("/message/all")
+    @PreAuthorize("hasRole('HR')")
+    public ResponseEntity<List<MessageResponse>> sendMessageToAllInterns(
+            @RequestBody @Valid BroadcastMessageRequest request) {
+
+        // Get all active interns
+        List<Long> internIds = internService.getAllActiveInternIds();
+
+        List<MessageResponse> responses = internService.sendMessageToMultipleInterns(
+                internIds,
+                request.getSubject(),
+                request.getContent()
+        );
+
+        return ResponseEntity.ok(responses);
     }
 }

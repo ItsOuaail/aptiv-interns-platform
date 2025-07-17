@@ -59,25 +59,29 @@ public class NotificationService {
         return response;
     }
 
-    public void createNotification(String subject, String message, Notification.NotificationType notificationType, User user, Intern intern) {
+    public Notification createNotification(String subject, String content, Notification.NotificationType notificationType, User user, Intern intern) {
         // Check if notification already exists to prevent duplicates
-        boolean exists = notificationRepository.existsByInternAndTypeAndMessage(intern, notificationType, message);
+        boolean exists = notificationRepository.existsByInternAndTypeAndMessage(intern, notificationType, content);
 
         if (!exists) {
             Notification notification = new Notification();
-            // DO NOT set the ID - let it be auto-generated
             notification.setTitle(subject);
-            notification.setMessage(message);
+            notification.setMessage(content);
             notification.setType(notificationType);
             notification.setUser(user);
-            notification.setIntern(intern); // Set the intern relationship
+            notification.setIntern(intern);
 
             try {
-                notificationRepository.save(notification);
+                return notificationRepository.save(notification);
             } catch (Exception e) {
                 Logger log = null;
                 log.error("Failed to save notification for intern {}: {}", intern.getId(), e.getMessage());
+                throw new RuntimeException("Failed to create notification");
             }
         }
+
+        // Return existing notification if found
+        return notificationRepository.findByInternAndTypeAndMessage(intern, notificationType, content)
+                .orElseThrow(() -> new RuntimeException("Failed to create or find notification"));
     }
 }

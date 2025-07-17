@@ -2,7 +2,7 @@ CREATE TABLE notifications (
                                id BIGSERIAL PRIMARY KEY,
                                title VARCHAR(255) NOT NULL,
                                message TEXT NOT NULL,
-                               type VARCHAR(50) NOT NULL CHECK (type IN ('INTERNSHIP_ENDING', 'ABSENCE_ALERT', 'DOCUMENT_UPLOADED', 'ACTIVITY_REMINDER')),
+                               type VARCHAR(50) NOT NULL CHECK (type IN ('INTERNSHIP_ENDING', 'ABSENCE_ALERT', 'DOCUMENT_UPLOADED', 'ACTIVITY_REMINDER', 'MESSAGE_FROM_HR')),
                                is_read BOOLEAN NOT NULL DEFAULT FALSE,
                                user_id BIGINT NOT NULL,
                                intern_id BIGINT,

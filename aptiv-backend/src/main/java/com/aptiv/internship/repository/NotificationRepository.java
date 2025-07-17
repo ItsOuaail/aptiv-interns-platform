@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -43,8 +44,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     );
 
     void deleteByCreatedAtBefore(LocalDateTime date);
-    boolean existsByInternAndTypeAndMessage(Intern intern, Notification.NotificationType type, String message);
+
 
     // Alternative method if you prefer to check by intern ID
     boolean existsByInternIdAndTypeAndMessage(Long internId, Notification.NotificationType type, String message);
+
+    boolean existsByInternAndTypeAndMessage(Intern intern, Notification.NotificationType type, String message);
+    Optional<Notification> findByInternAndTypeAndMessage(Intern intern, Notification.NotificationType type, String message);
 }
