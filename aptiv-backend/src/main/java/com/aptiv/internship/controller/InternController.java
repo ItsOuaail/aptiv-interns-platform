@@ -101,7 +101,7 @@ public class InternController {
         dto.setFirstName(intern.getFirstName());
         dto.setLastName(intern.getLastName());
         dto.setEmail(intern.getEmail());
-        
+
         // ... set other fields
         return dto;
     }
