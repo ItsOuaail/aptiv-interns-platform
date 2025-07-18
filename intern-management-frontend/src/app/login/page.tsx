@@ -25,43 +25,57 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-200"> {/* Test default color */}
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-blue-900 text-center">Welcome Back</h1> {/* Test default color */}
-        <p className="text-gray-600 mb-8 text-center">Please sign in to your account</p>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 transition duration-200"
-            />
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 w-full max-w-md">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-blue-500/10"></div>
+        <div className="relative">
+          {/* Logo Section */}
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <span className="text-xl font-bold tracking-wider text-white">APTIV</span>
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+            </div>
           </div>
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 transition duration-200"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-900 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold"
-          >
-            Login
-          </button>
-        </form>
-        {error && <p className="mt-4 text-red-500 text-center animate-pulse">{error}</p>}
-        <p className="mt-4 text-center text-gray-500 text-sm">
-          Don’t have an account?{' '}
-          <a href="/register" className="text-blue-900 hover:underline">
-            Sign up
-          </a>
-        </p>
+          <h1 className="text-4xl font-bold text-white mb-4 text-center">
+            Welcome Back
+            <span className="text-orange-500 ml-2">!</span>
+          </h1>
+          <p className="text-gray-300 mb-8 text-center">Please sign in to your account</p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+            >
+              Login
+            </button>
+          </form>
+          {error && <p className="mt-4 text-red-500 text-center animate-pulse">{error}</p>}
+          <p className="mt-4 text-center text-gray-400 text-sm">
+            Don’t have an account?{' '}
+            <a href="/register" className="text-orange-500 hover:underline">
+              Sign up
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
