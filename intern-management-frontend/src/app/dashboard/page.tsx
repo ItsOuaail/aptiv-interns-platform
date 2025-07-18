@@ -1,23 +1,24 @@
+"use client";
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getInterns, deleteIntern } from '../services/internService';
-import { useRequireAuth } from '../hooks/useRequireAuth';
-import { useRouter } from 'next/router';
-import Navbar from '../components/Navbar';
-import DataTable from '../components/DataTable';
-import FileDropzone from '../components/FileDropzone';
-import MessageForm from '../components/MessageForm';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getInterns, deleteIntern } from '../../services/internService';
+import { useRequireAuth } from '../../hooks/useRequireAuth';
+import { useRouter } from 'next/navigation';
+import Navbar from '../../components/Navbar';
+import DataTable from '../../components/DataTable';
+import FileDropzone from '../../components/FileDropzone';
+import MessageForm from '../../components/MessageForm';
 
 const DashboardPage = () => {
+  // ✅ All hooks at the top of the component
   const token = useRequireAuth();
   const router = useRouter();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [messageInternId, setMessageInternId] = useState<number | null>(null);
+  
   const size = 10;
-
-  if (!token) return null;
 
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
@@ -26,6 +27,9 @@ const DashboardPage = () => {
     queryKey: ['interns', page, size, search, filters],
     queryFn: () => getInterns(page, size, search, filters),
   });
+
+  // ✅ Conditional returns after all hooks
+  if (!token) return null;
 
   if (isLoading) return <div className="text-center p-4">Loading...</div>;
 
