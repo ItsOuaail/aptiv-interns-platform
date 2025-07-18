@@ -1,12 +1,12 @@
 import { AuthProvider } from '../context/AuthContext';
-import './globals.css';
+import '../styles/globals.css'; 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
         <AuthProvider>
-          {children} {/* This renders the page content */}
+          <body className="bg-red-500">{children}</body> {/* This renders the page content */}
         </AuthProvider>
       </body>
     </html>
