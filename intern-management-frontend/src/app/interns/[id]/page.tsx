@@ -1,15 +1,18 @@
+"use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useRequireAuth } from '../../hooks/useRequireAuth';
-import { updateIntern } from '../../services/internService';
-import Navbar from '../../components/Navbar';
-import api from '../../services/api';
+import { useRequireAuth } from '../../../hooks/useRequireAuth';
+import { updateIntern } from '../../../services/internService';
+import Navbar from '../../../components/Navbar';
+import api from '../../../services/api';
 
 const EditInternPage = () => {
   const token = useRequireAuth();
   const router = useRouter();
-  const { id } = router.query;
+  const params = useParams();
+  const id = params.id; // Get the id from useParams instead of router.query
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

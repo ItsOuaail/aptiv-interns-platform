@@ -1,18 +1,92 @@
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const { logout } = useAuth();
 
   return (
-    <nav className="bg-dark-blue text-white p-4 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold">Intern Management</h1>
-        <button
-          onClick={logout}
-          className="bg-red-500 px-4 py-2 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
+    <nav className="bg-black text-white shadow-lg relative">
+      {/* Background overlay for subtle gradient effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-gray-900 to-black opacity-90"></div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex justify-between h-16 items-center">
+          {/* Logo Section */}
+          <div className="flex-shrink-0 flex items-center">
+            <div className="flex items-center space-x-3">
+              {/* Aptiv-style logo placeholder */}
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="ml-2 text-xl font-bold tracking-wider">APTIV</span>
+                <div className="w-2 h-2 bg-orange-500 rounded-full ml-2"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+              INSIGHTS
+            </a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+              SOLUTIONS
+            </a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+              CAREERS
+            </a>
+            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+              ABOUT
+            </a>
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Search Icon */}
+            <button className="p-2 text-gray-300 hover:text-white transition-colors duration-200">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={logout}
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-transparent hover:bg-gray-800 transition-all duration-200 border border-gray-600 hover:border-gray-400"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+              </svg>
+              <span>Logout</span>
+            </button>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button className="text-gray-300 hover:text-white p-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Menu (hidden by default) */}
+      <div className="md:hidden bg-gray-900 border-t border-gray-800">
+        <div className="px-2 pt-2 pb-3 space-y-1">
+          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+            INSIGHTS
+          </a>
+          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+            SOLUTIONS
+          </a>
+          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+            CAREERS
+          </a>
+          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+            ABOUT
+          </a>
+        </div>
       </div>
     </nav>
   );
