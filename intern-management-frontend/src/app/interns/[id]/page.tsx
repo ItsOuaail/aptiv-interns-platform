@@ -39,7 +39,19 @@ const EditInternPage = () => {
     }
   }, [data]);
 
-  if (!token || isLoading) return <div className="text-center p-4">Loading...</div>;
+  if (!token || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <Navbar />
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-white text-lg font-medium">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -69,30 +81,111 @@ const EditInternPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-light-gray">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-6 text-dark-blue">Edit Intern {id}</h1>
-        <div className="bg-white p-6 rounded shadow-md max-w-lg mx-auto">
-          <div className="space-y-4">
-            <input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" className="w-full p-2 border rounded" />
-            <input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" className="w-full p-2 border rounded" />
-            <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full p-2 border rounded" />
-            <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" className="w-full p-2 border rounded" />
-            <input name="university" value={formData.university} onChange={handleChange} placeholder="University" className="w-full p-2 border rounded" />
-            <input name="major" value={formData.major} onChange={handleChange} placeholder="Major" className="w-full p-2 border rounded" />
-            <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className="w-full p-2 border rounded" />
-            <input name="endDate" type="date" value={formData.endDate} onChange={handleChange} className="w-full p-2 border rounded" />
-            <input name="supervisor" value={formData.supervisor} onChange={handleChange} placeholder="Supervisor" className="w-full p-2 border rounded" />
-            <input name="department" value={formData.department} onChange={handleChange} placeholder="Department" className="w-full p-2 border rounded" />
-            {errors.length > 0 && (
-              <ul className="text-red-500">
-                {errors.map((err, idx) => <li key={idx}>{err}</li>)}
-              </ul>
-            )}
-            <button onClick={handleSubmit} className="w-full bg-dark-blue text-white p-2 rounded hover:bg-blue-800">
-              Update
-            </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 max-w-lg mx-auto">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-blue-500/10"></div>
+          <div className="relative">
+            {/* Logo Section */}
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-xl font-bold tracking-wider text-white">APTIV</span>
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-4 text-center">
+              Edit Intern <span className="text-orange-500">{id}</span>
+            </h1>
+            <div className="space-y-6">
+              <input
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First Name"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last Name"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="university"
+                value={formData.university}
+                onChange={handleChange}
+                placeholder="University"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="major"
+                value={formData.major}
+                onChange={handleChange}
+                placeholder="Major"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="supervisor"
+                value={formData.supervisor}
+                onChange={handleChange}
+                placeholder="Supervisor"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              <input
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder="Department"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+              />
+              {errors.length > 0 && (
+                <ul className="text-red-500 text-sm">
+                  {errors.map((err, idx) => (
+                    <li key={idx} className="animate-pulse">{err}</li>
+                  ))}
+                </ul>
+              )}
+              <button
+                onClick={handleSubmit}
+                className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 w-full"
+              >
+                <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
