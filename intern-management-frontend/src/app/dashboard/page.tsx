@@ -211,14 +211,14 @@ const DashboardPage = () => {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-300">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-100">
               Page {page + 1} of {totalPages}
             </div>
             <div className="flex space-x-4">
               <button
                 disabled={page === 0}
                 onClick={() => setPage(page - 1)}
-                className="p-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
+                className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -227,7 +227,7 @@ const DashboardPage = () => {
               <button
                 disabled={page === totalPages - 1}
                 onClick={() => setPage(page + 1)}
-                className="p-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
+                className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
