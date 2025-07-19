@@ -10,7 +10,6 @@ import FileDropzone from '../../components/FileDropzone';
 import MessageForm from '../../components/MessageForm';
 
 const DashboardPage = () => {
-  // ✅ All hooks at the top of the component
   const token = useRequireAuth();
   const router = useRouter();
   const [page, setPage] = useState(0);
@@ -28,17 +27,16 @@ const DashboardPage = () => {
     queryFn: () => getInterns(page, size, search, filters),
   });
 
-  // ✅ Conditional returns after all hooks
   if (!token) return null;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <div className="min-h-screen bg-white">
         <Navbar />
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-white text-lg font-medium">Loading dashboard...</span>
+            <span className="text-gray-900 text-lg font-medium">Loading dashboard...</span>
           </div>
         </div>
       </div>
@@ -59,29 +57,29 @@ const DashboardPage = () => {
   const handleCreate = () => router.push('/interns/new');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-white">
       <Navbar />
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-blue-500/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Intern Management
               <span className="text-orange-500 ml-2">Dashboard</span>
             </h1>
-            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               Streamline your internship program with advanced analytics and seamless management tools
             </p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800/70 transition-all duration-300">
+            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm uppercase tracking-wide font-medium">Total Interns</p>
+                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Total Interns</p>
                   <p className="text-4xl font-bold text-white mt-2">{totalInterns?.data.count || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center">
@@ -92,10 +90,10 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800/70 transition-all duration-300">
+            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm uppercase tracking-wide font-medium">Active Interns</p>
+                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Active Interns</p>
                   <p className="text-4xl font-bold text-white mt-2">{activeInterns?.data.count || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
@@ -106,10 +104,10 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800/70 transition-all duration-300">
+            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
+                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
                   <p className="text-4xl font-bold text-white mt-2">{upcomingEndDates?.data.count || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center">
@@ -123,82 +121,83 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {/* Search and Filters */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Search & Filters</h2>
-          
-          <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search interns by name, university, or department..."
-                className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-              />
-            </div>
-
-            {/* Filter Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">University</label>
+        <div className="relative bg-gray-950 shadow-xl border border-orange-500/50 rounded-2xl p-8 mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
+          <div className="relative">
+            <h2 className="text-2xl font-semibold text-white mb-6">Search & Filters</h2>
+            
+            <div className="space-y-6">
+              {/* Search Bar */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
                 <input
                   type="text"
-                  placeholder="Filter by university"
-                  onChange={(e) => setFilters({ ...filters, university: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search interns by name, university, or department..."
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Start Date</label>
-                <input
-                  type="date"
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Department</label>
-                <input
-                  type="text"
-                  placeholder="Filter by department"
-                  onChange={(e) => setFilters({ ...filters, department: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300"
-                />
-              </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handleCreate}
-                className="flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Create New Intern</span>
-              </button>
-              <div className="flex-1">
-                <FileDropzone />
+              {/* Filter Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-100 mb-2">University</label>
+                  <input
+                    type="text"
+                    placeholder="Filter by university"
+                    onChange={(e) => setFilters({ ...filters, university: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-100 mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-100 mb-2">Department</label>
+                  <input
+                    type="text"
+                    placeholder="Filter by department"
+                    onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={handleCreate}
+                  className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+                <div className="flex-1">
+                  <FileDropzone />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Data Table */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
+        <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">Interns Directory</h2>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-300">
               Showing {interns.length} of {totalInterns?.data.count || 0} interns
             </div>
           </div>
@@ -211,28 +210,26 @@ const DashboardPage = () => {
           />
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-700">
-            <div className="text-sm text-gray-400">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-300">
+            <div className="text-sm text-gray-600">
               Page {page + 1} of {totalPages}
             </div>
             <div className="flex space-x-4">
               <button
                 disabled={page === 0}
                 onClick={() => setPage(page - 1)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700"
+                className="p-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                <span>Previous</span>
               </button>
               <button
                 disabled={page === totalPages - 1}
                 onClick={() => setPage(page + 1)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700"
+                className="p-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
               >
-                <span>Next</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
