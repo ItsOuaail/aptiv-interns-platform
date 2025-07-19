@@ -38,6 +38,7 @@ public class InternService {
     private final EmailService emailService;
     private final NotificationService notificationService;
 
+
     public InternResponse createIntern(InternRequest request) {
         User hrUser = getCurrentUser();
 
@@ -416,6 +417,35 @@ public class InternService {
                 hrUser.getFirstName(),
                 hrUser.getLastName(),
                 hrUser.getEmail()
+        );
+    }
+    /**
+     * Get total count of all interns
+     */
+    @Transactional(readOnly = true)
+    public long getInternCount() {
+        return internRepository.count();
+    }
+
+    /**
+     * Get count of active interns
+     */
+    @Transactional(readOnly = true)
+    public long getActiveInternCount() {
+        return internRepository.countByStatus(Intern.InternshipStatus.ACTIVE);
+    }
+
+    /**
+     * Get count of interns with upcoming end dates (within next 30 days)
+     */
+    @Transactional(readOnly = true)
+    public long getUpcomingEndDatesCount() {
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysFromNow = today.plusDays(7);
+        return internRepository.countByEndDateBetweenAndStatus(
+                today,
+                thirtyDaysFromNow,
+                Intern.InternshipStatus.ACTIVE
         );
     }
 }

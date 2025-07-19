@@ -4,14 +4,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
 export const useRequireAuth = () => {
-  const { token } = useAuth();
+  const { token, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!token) {
+    // Only redirect if we're not loading AND there's no token
+    if (!isLoading && !token) {
       router.push('/login');
     }
-  }, [token, router]);
+  }, [token, isLoading, router]);
 
-  return token;
+  return { token, isLoading };
 };

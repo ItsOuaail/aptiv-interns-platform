@@ -10,14 +10,14 @@ interface DataTableProps {
 const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps) => {
   if (interns.length === 0) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-12 text-center">
-        <div className="w-24 h-24 mx-auto mb-6 bg-gray-700/50 rounded-full flex items-center justify-center">
-          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-gray-600/50 backdrop-blur-sm border border-gray-500 rounded-2xl p-12 text-center">
+        <div className="w-24 h-24 mx-auto mb-6 bg-gray-500/50 rounded-full flex items-center justify-center">
+          <svg className="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
           </svg>
         </div>
         <h3 className="text-xl font-semibold text-white mb-2">No Interns Found</h3>
-        <p className="text-gray-400">No interns match your current search criteria.</p>
+        <p className="text-gray-200">No interns match your current search criteria.</p>
       </div>
     );
   }
@@ -27,44 +27,44 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
       {/* Desktop Table View */}
       <div className="hidden xl:block">
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-2xl">
-            <thead className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-sm">
+          <table className="min-w-full bg-gray-600/30 backdrop-blur-sm border border-gray-500 rounded-2xl">
+            <thead className="bg-gradient-to-r from-gray-700/80 to-gray-600/80 backdrop-blur-sm">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   ID
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Name
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Contact
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   University
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Major
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Duration
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Supervisor
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Department
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider border-b border-gray-700">
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700/50">
+            <tbody className="divide-y divide-gray-500/50">
               {interns.map((intern, index) => (
                 <tr
                   key={intern.id}
-                  className={`hover:bg-gray-700/30 transition-all duration-300 ${
-                    index % 2 === 0 ? 'bg-gray-800/20' : 'bg-gray-800/40'
+                  className={`hover:bg-gray-500/30 transition-all duration-300 ${
+                    index % 2 === 0 ? 'bg-gray-600/20' : 'bg-gray-600/40'
                   }`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -78,8 +78,8 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
                     <div className="text-sm font-medium text-white">{intern.firstName} {intern.lastName}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-300">{intern.email}</div>
-                    <div className="text-sm text-gray-400">{intern.phone}</div>
+                    <div className="text-sm text-gray-200">{intern.email}</div>
+                    <div className="text-sm text-gray-300">{intern.phone}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">{intern.university}</div>
@@ -90,8 +90,8 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-300">{intern.startDate}</div>
-                    <div className="text-sm text-gray-400">{intern.endDate}</div>
+                    <div className="text-sm text-gray-200">{intern.startDate}</div>
+                    <div className="text-sm text-gray-300">{intern.endDate}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">{intern.supervisor}</div>
@@ -144,7 +144,7 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
         {interns.map((intern, index) => (
           <div
             key={intern.id}
-            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-gray-800/70 transition-all duration-300"
+            className="bg-gray-600/50 backdrop-blur-sm border border-gray-500 rounded-2xl p-6 hover:bg-gray-600/70 transition-all duration-300"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
@@ -153,7 +153,7 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">{intern.firstName} {intern.lastName}</h3>
-                  <p className="text-sm text-gray-400">{intern.email}</p>
+                  <p className="text-sm text-gray-200">{intern.email}</p>
                 </div>
               </div>
               <div className="flex space-x-2">
@@ -186,35 +186,35 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Phone</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">Phone</p>
                 <p className="text-sm text-white">{intern.phone}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">University</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">University</p>
                 <p className="text-sm text-white">{intern.university}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Major</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">Major</p>
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   {intern.major}
                 </span>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Department</p>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">Department</p>
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-blue-500/30">
                   {intern.department}
                 </span>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Start Date</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">Start Date</p>
                 <p className="text-sm text-white">{intern.startDate}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">End Date</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">End Date</p>
                 <p className="text-sm text-white">{intern.endDate}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Supervisor</p>
+                <p className="text-xs text-gray-200 uppercase tracking-wide font-medium mb-1">Supervisor</p>
                 <p className="text-sm text-white">{intern.supervisor}</p>
               </div>
             </div>

@@ -28,6 +28,12 @@ public interface InternRepository extends JpaRepository<Intern, Long> {
 
     Optional<Intern> findByEmail(String email);
 
+
+    /**
+     * Count interns with end dates between two dates and specific status
+     */
+    long countByEndDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, Intern.InternshipStatus status);
+
     List<Intern> findByUser(User user);
 
     Page<Intern> findByUser(User user, Pageable pageable);
