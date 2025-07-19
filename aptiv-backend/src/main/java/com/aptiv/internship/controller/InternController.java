@@ -242,4 +242,22 @@ public class InternController {
 
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getInternCount() {
+        long count = internService.getInternCount();
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/active/count")
+    public ResponseEntity<Long> getActiveInternCount() {
+        long count = internService.getActiveInternCount();
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/upcoming-end-dates/count")
+    public ResponseEntity<Long> getUpcomingEndDatesCount() {
+        long count = internService.getUpcomingEndDatesCount();
+        return ResponseEntity.ok(count);
+    }
 }

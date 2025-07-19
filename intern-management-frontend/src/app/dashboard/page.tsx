@@ -80,7 +80,7 @@ const DashboardPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Total Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{totalInterns?.data.count || 0}</p>
+                  <p className="text-4xl font-bold text-white mt-2">{totalInterns?.data || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@ const DashboardPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Active Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{activeInterns?.data.count || 0}</p>
+                  <p className="text-4xl font-bold text-white mt-2">{activeInterns?.data || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ const DashboardPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
-                  <p className="text-4xl font-bold text-white mt-2">{upcomingEndDates?.data.count || 0}</p>
+                  <p className="text-4xl font-bold text-white mt-2">{upcomingEndDates?.data || 0}</p>
                 </div>
                 <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
