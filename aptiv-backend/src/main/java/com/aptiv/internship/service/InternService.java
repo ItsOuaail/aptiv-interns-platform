@@ -1,5 +1,9 @@
 package com.aptiv.internship.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
 import com.aptiv.internship.dto.request.InternRequest;
 import com.aptiv.internship.dto.request.MessageRequest;
 import com.aptiv.internship.dto.response.InternResponse;
@@ -7,9 +11,11 @@ import com.aptiv.internship.dto.response.MessageResponse;
 import com.aptiv.internship.entity.Intern;
 import com.aptiv.internship.entity.Notification;
 import com.aptiv.internship.entity.User;
+import com.aptiv.internship.exception.DuplicateInternException;
 import com.aptiv.internship.exception.ResourceNotFoundException;
 import com.aptiv.internship.repository.InternRepository;
 import com.aptiv.internship.repository.UserRepository;
+import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,12 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -38,189 +42,197 @@ public class InternService {
     private final EmailService emailService;
     private final NotificationService notificationService;
 
-
     public InternResponse createIntern(InternRequest request) {
-        User hrUser = getCurrentUser();
+        if (internRepository.existsByEmail(request.getEmail())) {
+            log.warn("Attempt to create intern with existing email: {}", request.getEmail());
+            throw new DuplicateInternException("Intern with email " + request.getEmail() + " already exists");
+        }
 
-        Intern intern = new Intern();
-        intern.setFirstName(request.getFirstName());
-        intern.setLastName(request.getLastName());
-        intern.setEmail(request.getEmail());
-        intern.setPhone(request.getPhone());
-        intern.setUniversity(request.getUniversity());
-        intern.setMajor(request.getMajor());
-        intern.setStartDate(request.getStartDate());
-        intern.setEndDate(request.getEndDate());
-        intern.setSupervisor(request.getSupervisor());
-        intern.setDepartment(request.getDepartment());
+        User hrUser = getCurrentUser();
+        Intern intern = mapToEntity(request);
         intern.setUser(hrUser);
 
-        return convertToResponse(internRepository.save(intern));
+        try {
+            return convertToResponse(internRepository.save(intern));
+        } catch (Exception e) {
+            log.error("Failed to save intern with email {}: {}", request.getEmail(), e.getMessage(), e);
+            throw new RuntimeException("Failed to create intern: " + e.getMessage(), e);
+        }
     }
 
     public InternResponse getInternById(Long id) {
         return convertToResponse(internRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "id", id)));
+                .orElseThrow(() -> {
+                    log.warn("Intern with id {} not found", id);
+                    return new ResourceNotFoundException("Intern", "id", id);
+                }));
     }
 
     public Page<InternResponse> getAllInterns(Pageable pageable) {
-        return internRepository.findAll(pageable)
-                // lambda explicite pour lever l’ambiguïté
-                .map(intern -> convertToResponse(intern));
+        try {
+            return internRepository.findAll(pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to retrieve all interns: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve interns: " + e.getMessage(), e);
+        }
     }
 
     @Transactional(readOnly = true)
     public Page<InternResponse> searchInterns(
-            String keyword,
-            String department,
-            String university,
-            String major,
-            String supervisor,
-            Intern.InternshipStatus status,
-            LocalDate startDateFrom,
-            LocalDate startDateTo,
-            LocalDate endDateFrom,
-            LocalDate endDateTo,
-            Pageable pageable) {
-
-        Specification<Intern> spec = buildSearchSpecification(
-                keyword, department, university, major, supervisor, status,
-                startDateFrom, startDateTo, endDateFrom, endDateTo);
-
-        return internRepository.findAll(spec, pageable)
-                .map(intern -> convertToResponse(intern)); // Explicitly use convertToResponse(Intern)
+            String keyword, String department, String university, String major, String supervisor,
+            Intern.InternshipStatus status, LocalDate startDateFrom, LocalDate startDateTo,
+            LocalDate endDateFrom, LocalDate endDateTo, Pageable pageable) {
+        try {
+            Specification<Intern> spec = buildSearchSpecification(keyword, department, university, major, supervisor,
+                    status, startDateFrom, startDateTo, endDateFrom, endDateTo);
+            return internRepository.findAll(spec, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to search interns: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to search interns: " + e.getMessage(), e);
+        }
     }
 
     public Page<Intern> searchByKeyword(String keyword, Pageable pageable) {
-        // Directly return the paginated result from the repository
-        return internRepository.findByKeyword(keyword, pageable);
+        try {
+            return internRepository.findByKeyword(keyword, pageable);
+        } catch (Exception e) {
+            log.error("Failed to search interns by keyword '{}': {}", keyword, e.getMessage(), e);
+            throw new RuntimeException("Failed to search interns by keyword: " + e.getMessage(), e);
+        }
     }
+
     @Transactional(readOnly = true)
     public Object searchInternsByKeywsord(String keyword, Pageable pageable) {
-        if (!StringUtils.hasText(keyword)) {
-            return getAllInterns(pageable);
+        try {
+            if (!StringUtils.hasText(keyword)) {
+                return getAllInterns(pageable);
+            }
+            Specification<Intern> spec = (root, query, cb) -> {
+                String searchTerm = "%" + keyword.toLowerCase() + "%";
+                return cb.or(
+                        cb.like(cb.lower(root.get("firstName")), searchTerm),
+                        cb.like(cb.lower(root.get("lastName")), searchTerm),
+                        cb.like(cb.lower(root.get("email")), searchTerm),
+                        cb.like(cb.lower(root.get("university")), searchTerm),
+                        cb.like(cb.lower(root.get("major")), searchTerm),
+                        cb.like(cb.lower(root.get("department")), searchTerm),
+                        cb.like(cb.lower(root.get("supervisor")), searchTerm)
+                );
+            };
+            return internRepository.findAll(spec, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to search interns by keyword '{}': {}", keyword, e.getMessage(), e);
+            throw new RuntimeException("Failed to search interns by keyword: " + e.getMessage(), e);
         }
-
-        Specification<Intern> spec = (root, query, cb) -> {
-            String searchTerm = "%" + keyword.toLowerCase() + "%";
-            return cb.or(
-                    cb.like(cb.lower(root.get("firstName")), searchTerm),
-                    cb.like(cb.lower(root.get("lastName")), searchTerm),
-                    cb.like(cb.lower(root.get("email")), searchTerm),
-                    cb.like(cb.lower(root.get("university")), searchTerm),
-                    cb.like(cb.lower(root.get("major")), searchTerm),
-                    cb.like(cb.lower(root.get("department")), searchTerm),
-                    cb.like(cb.lower(root.get("supervisor")), searchTerm)
-            );
-        };
-
-        return internRepository.findAll(spec, pageable)
-                .map(intern -> convertToResponse((Intern) intern));
     }
 
     @Transactional(readOnly = true)
     public Page<InternResponse> getInternsByDepartment(String department, Pageable pageable) {
-        return internRepository.findByDepartmentContainingIgnoreCase(department, pageable)
-                .map(intern -> convertToResponse(intern));
+        try {
+            return internRepository.findByDepartmentContainingIgnoreCase(department, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to retrieve interns by department '{}': {}", department, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve interns by department: " + e.getMessage(), e);
+        }
+    }
+    public List<Intern> findInternsByCriteria(String keyword, EntityManager entityManager) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Intern> cq = cb.createQuery(Intern.class);
+        Root<Intern> root = cq.from(Intern.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        if (keyword != null && !keyword.isEmpty()) {
+            predicates.add(cb.like(root.get("name"), "%" + keyword + "%"));
+        }
+
+        cq.select(root).where(cb.and(predicates.toArray(new Predicate[0])));
+        return entityManager.createQuery(cq).getResultList();
     }
 
     @Transactional(readOnly = true)
     public Page<InternResponse> getInternsByUniversity(String university, Pageable pageable) {
-        return internRepository.findByUniversityContainingIgnoreCase(university, pageable)
-                .map(intern -> convertToResponse(intern));
+        try {
+            return internRepository.findByUniversityContainingIgnoreCase(university, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to retrieve interns by university '{}': {}", university, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve interns by university: " + e.getMessage(), e);
+        }
     }
 
     @Transactional(readOnly = true)
     public Page<InternResponse> getInternsByStatus(Intern.InternshipStatus status, Pageable pageable) {
-        return internRepository.findByStatus(status, pageable)
-                .map(intern -> convertToResponse(intern));
+        try {
+            return internRepository.findByStatus(status, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to retrieve interns by status '{}': {}", status, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve interns by status: " + e.getMessage(), e);
+        }
     }
 
     @Transactional(readOnly = true)
     public Page<InternResponse> getInternsBySupervisor(String supervisor, Pageable pageable) {
-        return internRepository.findBySupervisorContainingIgnoreCase(supervisor, pageable)
-                .map(intern -> convertToResponse(intern));
-    }
-
-    private Specification<Intern> buildSearchSpecification(
-            String keyword,
-            String department,
-            String university,
-            String major,
-            String supervisor,
-            Intern.InternshipStatus status,
-            LocalDate startDateFrom,
-            LocalDate startDateTo,
-            LocalDate endDateFrom,
-            LocalDate endDateTo) {
-
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (StringUtils.hasText(keyword)) {
-                String term = "%" + keyword.toLowerCase() + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("firstName")), term),
-                        cb.like(cb.lower(root.get("lastName")), term),
-                        cb.like(cb.lower(root.get("email")), term),
-                        cb.like(cb.lower(root.get("university")), term),
-                        cb.like(cb.lower(root.get("major")), term),
-                        cb.like(cb.lower(root.get("department")), term),
-                        cb.like(cb.lower(root.get("supervisor")), term)
-                ));
-            }
-
-            if (StringUtils.hasText(department)) {
-                predicates.add(cb.like(cb.lower(root.get("department")), "%" + department.toLowerCase() + "%"));
-            }
-            if (StringUtils.hasText(university)) {
-                predicates.add(cb.like(cb.lower(root.get("university")), "%" + university.toLowerCase() + "%"));
-            }
-            if (StringUtils.hasText(major)) {
-                predicates.add(cb.like(cb.lower(root.get("major")), "%" + major.toLowerCase() + "%"));
-            }
-            if (StringUtils.hasText(supervisor)) {
-                predicates.add(cb.like(cb.lower(root.get("supervisor")), "%" + supervisor.toLowerCase() + "%"));
-            }
-            if (status != null) {
-                predicates.add(cb.equal(root.get("status"), status));
-            }
-            if (startDateFrom != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), startDateFrom));
-            }
-            if (startDateTo != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("startDate"), startDateTo));
-            }
-            if (endDateFrom != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("endDate"), endDateFrom));
-            }
-            if (endDateTo != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("endDate"), endDateTo));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
+        try {
+            return internRepository.findBySupervisorContainingIgnoreCase(supervisor, pageable).map(this::convertToResponse);
+        } catch (Exception e) {
+            log.error("Failed to retrieve interns by supervisor '{}': {}", supervisor, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve interns by supervisor: " + e.getMessage(), e);
+        }
     }
 
     public InternResponse getCurrentInternProfile() {
         User user = getCurrentUser();
         return convertToResponse(internRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", user.getEmail())));
+                .orElseThrow(() -> {
+                    log.warn("Intern with email {} not found", user.getEmail());
+                    return new ResourceNotFoundException("Intern", "email", user.getEmail());
+                }));
     }
 
     @Transactional
     public void createInternsBatch(List<InternRequest> requests, User hrUser) {
+        // Check for duplicates within the batch
+        Set<String> emailsInBatch = new HashSet<>();
+        List<String> duplicateEmails = new ArrayList<>();
+        for (InternRequest request : requests) {
+            if (!emailsInBatch.add(request.getEmail())) {
+                duplicateEmails.add(request.getEmail());
+            }
+        }
+        if (!duplicateEmails.isEmpty()) {
+            log.warn("Duplicate emails found in batch: {}", duplicateEmails);
+            throw new DuplicateInternException("Duplicate emails in batch: " + String.join(", ", duplicateEmails));
+        }
+
+        // Check for existing emails in the database
+        List<String> existingEmails = internRepository. findByEmail(String.valueOf(new ArrayList<>(emailsInBatch)))
+                .stream()
+                .map(Intern::getEmail)
+                .collect(Collectors.toList());
+        if (!existingEmails.isEmpty()) {
+            log.warn("Existing emails found in database: {}", existingEmails);
+            throw new DuplicateInternException("Interns with these emails already exist: " + String.join(", ", existingEmails));
+        }
+
+        // Save all interns
         List<Intern> interns = requests.stream()
                 .map(this::mapToEntity)
                 .peek(i -> i.setUser(hrUser))
                 .collect(Collectors.toList());
-        internRepository.saveAll(interns);
+        try {
+            internRepository.saveAll(interns);
+        } catch (Exception e) {
+            log.error("Failed to save batch of interns: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create intern batch: " + e.getMessage(), e);
+        }
     }
 
     @Transactional
     public InternResponse updateIntern(Long id, InternRequest request) {
         Intern intern = internRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "id", id));
+                .orElseThrow(() -> {
+                    log.warn("Intern with id {} not found for update", id);
+                    return new ResourceNotFoundException("Intern", "id", id);
+                });
 
         intern.setFirstName(request.getFirstName());
         intern.setLastName(request.getLastName());
@@ -233,17 +245,133 @@ public class InternService {
         intern.setSupervisor(request.getSupervisor());
         intern.setDepartment(request.getDepartment());
 
-        Intern updatedIntern = internRepository.save(intern);
-        User user = userRepository.findById(updatedIntern.getUser().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", updatedIntern.getUser().getId()));
-        return convertToResponse(updatedIntern, user);
+        try {
+            Intern updatedIntern = internRepository.save(intern);
+            return convertToResponse(updatedIntern);
+        } catch (Exception e) {
+            log.error("Failed to update intern with id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Failed to update intern: " + e.getMessage(), e);
+        }
     }
 
     @Transactional
     public void deleteIntern(Long id) {
         Intern intern = internRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "id", id));
-        internRepository.delete(intern);
+                .orElseThrow(() -> {
+                    log.warn("Intern with id {} not found for deletion", id);
+                    return new ResourceNotFoundException("Intern", "id", id);
+                });
+        try {
+            internRepository.delete(intern);
+        } catch (Exception e) {
+            log.error("Failed to delete intern with id {}: {}", id, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete intern: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public MessageResponse sendMessageToIntern(MessageRequest request) {
+        User hrUser = getCurrentUser();
+        Intern intern = internRepository.findById(request.getInternId())
+                .orElseThrow(() -> {
+                    log.warn("Intern with id {} not found for messaging", request.getInternId());
+                    return new ResourceNotFoundException("Intern", "id", request.getInternId());
+                });
+
+        String subject = "[Internship Message] " + request.getSubject();
+        String body = buildEmailBody(request.getContent(), hrUser, intern);
+
+        try {
+            emailService.sendEmail(intern.getEmail(), subject, body);
+            Notification notification = notificationService.createNotification(
+                    request.getSubject(),
+                    request.getContent(),
+                    Notification.NotificationType.MESSAGE_FROM_HR,
+                    intern.getUser(),
+                    intern
+            );
+            MessageResponse resp = new MessageResponse();
+            resp.setId(notification.getId());
+            resp.setSubject(request.getSubject());
+            resp.setContent(request.getContent());
+            resp.setIsRead(false);
+            resp.setSentAt(LocalDateTime.now());
+            resp.setInternId(intern.getId());
+            resp.setInternName(intern.getFirstName() + " " + intern.getLastName());
+            resp.setSenderId(hrUser.getId());
+            resp.setSenderName(hrUser.getFirstName() + " " + hrUser.getLastName());
+            return resp;
+        } catch (Exception e) {
+            log.error("Failed to send message to intern {}: {}", intern.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send message to intern: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public List<MessageResponse> sendMessageToMultipleInterns(List<Long> internIds, String subject, String content) {
+        List<MessageResponse> responses = new ArrayList<>();
+        for (Long id : internIds) {
+            try {
+                MessageRequest req = new MessageRequest();
+                req.setInternId(id);
+                req.setSubject(subject);
+                req.setContent(content);
+                responses.add(sendMessageToIntern(req));
+            } catch (Exception e) {
+                log.error("Failed to send message to intern {}: {}", id, e.getMessage(), e);
+                MessageResponse err = new MessageResponse();
+                err.setInternId(id);
+                err.setSubject(subject);
+                err.setContent("ERROR: " + e.getMessage());
+                err.setSentAt(LocalDateTime.now());
+                responses.add(err);
+            }
+        }
+        return responses;
+    }
+
+    public List<Long> getAllActiveInternIds() {
+        try {
+            return internRepository.findByStatus(Intern.InternshipStatus.ACTIVE)
+                    .stream()
+                    .map(Intern::getId)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to retrieve active intern IDs: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve active intern IDs: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public long getInternCount() {
+        try {
+            return internRepository.count();
+        } catch (Exception e) {
+            log.error("Failed to get intern count: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get intern count: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public long getActiveInternCount() {
+        try {
+            return internRepository.countByStatus(Intern.InternshipStatus.ACTIVE);
+        } catch (Exception e) {
+            log.error("Failed to get active intern count: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get active intern count: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public long getUpcomingEndDatesCount() {
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysFromNow = today.plusDays(7);
+        try {
+            return internRepository.countByEndDateBetweenAndStatus(today, thirtyDaysFromNow, Intern.InternshipStatus.ACTIVE);
+        } catch (Exception e) {
+            log.error("Failed to get upcoming end dates count: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get upcoming end dates count: " + e.getMessage(), e);
+        }
     }
 
     private Intern mapToEntity(InternRequest request) {
@@ -263,10 +391,7 @@ public class InternService {
     }
 
     InternResponse convertToResponse(Intern intern) {
-        return convertToResponse(intern, intern.getUser());
-    }
-
-    private InternResponse convertToResponse(Intern intern, User user) {
+        User user = intern.getUser();
         InternResponse response = new InternResponse();
         response.setId(intern.getId());
         response.setFirstName(intern.getFirstName());
@@ -289,106 +414,48 @@ public class InternService {
 
     private User getCurrentUser() {
         String email = getCurrentUserEmail();
-        Optional<User> opt = userRepository.findByEmail(email);
-        if (opt.isPresent()) {
-            return opt.get();
-        } else {
-            User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setFirstName("Unknown");
-            newUser.setLastName("User");
-            List<String> roles = extractRolesFromContext();
-            newUser.setRole(roles.contains("HR") ? User.Role.HR : User.Role.INTERN);
-            newUser.setCreatedAt(LocalDateTime.now());
-            newUser.setUpdatedAt(LocalDateTime.now());
-            return userRepository.save(newUser);
+        try {
+            return userRepository.findByEmail(email)
+                    .orElseGet(() -> {
+                        User newUser = new User();
+                        newUser.setEmail(email);
+                        newUser.setFirstName("Unknown");
+                        newUser.setLastName("User");
+                        List<String> roles = extractRolesFromContext();
+                        newUser.setRole(roles.contains("HR") ? User.Role.HR : User.Role.INTERN);
+                        newUser.setCreatedAt(LocalDateTime.now());
+                        newUser.setUpdatedAt(LocalDateTime.now());
+                        return userRepository.save(newUser);
+                    });
+        } catch (Exception e) {
+            log.error("Failed to get or create current user with email {}: {}", email, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve or create current user: " + e.getMessage(), e);
         }
     }
 
     private String getCurrentUserEmail() {
-        UserDetails userDetails =
-                (UserDetails) SecurityContextHolder.getContext()
-                        .getAuthentication()
-                        .getPrincipal();
-        return userDetails.getUsername();
+        try {
+            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return userDetails.getUsername();
+        } catch (Exception e) {
+            log.error("Failed to get current user email from security context: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get current user email: " + e.getMessage(), e);
+        }
     }
 
     private List<String> extractRolesFromContext() {
-        UserDetails userDetails =
-                (UserDetails) SecurityContextHolder.getContext()
-                        .getAuthentication()
-                        .getPrincipal();
-        return userDetails.getAuthorities().stream()
-                .map(a -> a.getAuthority())
-                .filter(a -> a.startsWith("ROLE_"))
-                .map(a -> a.substring(5))
-                .toList();
-    }
-
-    @Transactional
-    public MessageResponse sendMessageToIntern(MessageRequest request) {
-        User hrUser = getCurrentUser();
-        Intern intern = internRepository.findById(request.getInternId())
-                .orElseThrow(() -> new ResourceNotFoundException("Intern", "id", request.getInternId()));
-
-        String subject = "[Internship Message] " + request.getSubject();
-        String body = buildEmailBody(request.getContent(), hrUser, intern);
-
         try {
-            emailService.sendEmail(intern.getEmail(), subject, body);
-
-            Notification notification = notificationService.createNotification(
-                    request.getSubject(),
-                    request.getContent(),
-                    Notification.NotificationType.MESSAGE_FROM_HR,
-                    intern.getUser(),
-                    intern
-            );
-
-            MessageResponse resp = new MessageResponse();
-            resp.setId(notification.getId());
-            resp.setSubject(request.getSubject());
-            resp.setContent(request.getContent());
-            resp.setIsRead(false);
-            resp.setSentAt(LocalDateTime.now());
-            resp.setInternId(intern.getId());
-            resp.setInternName(intern.getFirstName() + " " + intern.getLastName());
-            resp.setSenderId(hrUser.getId());
-            resp.setSenderName(hrUser.getFirstName() + " " + hrUser.getLastName());
-            return resp;
-
+            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return userDetails.getAuthorities().stream()
+                    .map(a -> a.getAuthority())
+                    .filter(a -> a.startsWith("ROLE_"))
+                    .map(a -> a.substring(5))
+                    .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send message: " + e.getMessage());
+            log.error("Failed to extract roles from security context: {}", e.getMessage(), e);
+            Throwable uyg = null;
+            throw new RuntimeException("Failed to extract user roles: " + e.getMessage(), uyg);
         }
-    }
-
-    @Transactional
-    public List<MessageResponse> sendMessageToMultipleInterns(List<Long> internIds, String subject, String content) {
-        List<MessageResponse> responses = new ArrayList<>();
-        for (Long id : internIds) {
-            try {
-                MessageRequest req = new MessageRequest();
-                req.setInternId(id);
-                req.setSubject(subject);
-                req.setContent(content);
-                responses.add(sendMessageToIntern(req));
-            } catch (Exception e) {
-                MessageResponse err = new MessageResponse();
-                err.setInternId(id);
-                err.setSubject(subject);
-                err.setContent("ERROR: " + e.getMessage());
-                err.setSentAt(LocalDateTime.now());
-                responses.add(err);
-            }
-        }
-        return responses;
-    }
-
-    public List<Long> getAllActiveInternIds() {
-        return internRepository.findByStatus(Intern.InternshipStatus.ACTIVE)
-                .stream()
-                .map(Intern::getId)
-                .collect(Collectors.toList());
     }
 
     private String buildEmailBody(String content, User hrUser, Intern intern) {
@@ -408,43 +475,60 @@ public class InternService {
             
             This is an automated message from the Internship Management System.
             """,
-                intern.getFirstName(),
-                intern.getLastName(),
-                hrUser.getFirstName(),
-                hrUser.getLastName(),
+                intern.getFirstName(), intern.getLastName(),
+                hrUser.getFirstName(), hrUser.getLastName(),
                 content,
-                hrUser.getFirstName(),
-                hrUser.getLastName(),
+                hrUser.getFirstName(), hrUser.getLastName(),
                 hrUser.getEmail()
         );
     }
-    /**
-     * Get total count of all interns
-     */
-    @Transactional(readOnly = true)
-    public long getInternCount() {
-        return internRepository.count();
-    }
 
-    /**
-     * Get count of active interns
-     */
-    @Transactional(readOnly = true)
-    public long getActiveInternCount() {
-        return internRepository.countByStatus(Intern.InternshipStatus.ACTIVE);
-    }
+    private Specification<Intern> buildSearchSpecification(
+            String keyword, String department, String university, String major, String supervisor,
+            Intern.InternshipStatus status, LocalDate startDateFrom, LocalDate startDateTo,
+            LocalDate endDateFrom, LocalDate endDateTo) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(keyword)) {
+                String term = "%" + keyword.toLowerCase() + "%";
+                predicates.add((Predicate) cb.or(
+                        cb.like(cb.lower(root.get("firstName")), term),
+                        cb.like(cb.lower(root.get("lastName")), term),
+                        cb.like(cb.lower(root.get("email")), term),
+                        cb.like(cb.lower(root.get("university")), term),
+                        cb.like(cb.lower(root.get("major")), term),
+                        cb.like(cb.lower(root.get("department")), term),
+                        cb.like(cb.lower(root.get("supervisor")), term)
+                ));
+            }
+            if (StringUtils.hasText(department)) {
+                predicates.add((Predicate) cb.like(cb.lower(root.get("department")), "%" + department.toLowerCase() + "%"));
+            }
+            if (StringUtils.hasText(university)) {
+                predicates.add((Predicate) cb.like(cb.lower(root.get("university")), "%" + university.toLowerCase() + "%"));
+            }
+            if (StringUtils.hasText(major)) {
+                predicates.add((Predicate) cb.like(cb.lower(root.get("major")), "%" + major.toLowerCase() + "%"));
+            }
+            if (StringUtils.hasText(supervisor)) {
+                predicates.add((Predicate) cb.like(cb.lower(root.get("supervisor")), "%" + supervisor.toLowerCase() + "%"));
+            }
+            if (status != null) {
+                predicates.add((Predicate) cb.equal(root.get("status"), status));
+            }
+            if (startDateFrom != null) {
+                predicates.add((Predicate) cb.greaterThanOrEqualTo(root.get("startDate"), startDateFrom));
+            }
+            if (startDateTo != null) {
+                predicates.add((Predicate) cb.lessThanOrEqualTo(root.get("startDate"), startDateTo));
+            }
+            if (endDateFrom != null) {
+                predicates.add((Predicate) cb.greaterThanOrEqualTo(root.get("endDate"), endDateFrom));
+            }
+            if (endDateTo != null) {
+                predicates.add((Predicate) cb.lessThanOrEqualTo(root.get("endDate"), endDateTo));
+            }
 
-    /**
-     * Get count of interns with upcoming end dates (within next 30 days)
-     */
-    @Transactional(readOnly = true)
-    public long getUpcomingEndDatesCount() {
-        LocalDate today = LocalDate.now();
-        LocalDate thirtyDaysFromNow = today.plusDays(7);
-        return internRepository.countByEndDateBetweenAndStatus(
-                today,
-                thirtyDaysFromNow,
-                Intern.InternshipStatus.ACTIVE
-        );
+            return cb.and(predicates.toArray(new Predicate[0])); };
     }
 }
