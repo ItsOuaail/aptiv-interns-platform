@@ -1,8 +1,18 @@
 import api from './api';
 
-export const getInterns = (page: number, size: number, search?: string, filters?: Record<string, string>) =>
-  api.get('/interns', { params: { page, size, search, ...filters } });
+export const getInterns = (page: number, size: number, search?: string, filters?: Record<string, string>) => {
+  const params = {
+    page,
+    size,
+    keyword: search,
+    university: filters?.university,
+    department: filters?.department,
+    startDateFrom: filters?.startDate,
+  };
+  return api.get('/interns/search', { params });
+};
 
+// Other unchanged functions
 export const getInternCount = () => api.get('/interns/count');
 export const getActiveInternCount = () => api.get('/interns/active/count');
 export const getUpcomingEndDatesCount = () => api.get('/interns/upcoming-end-dates/count');

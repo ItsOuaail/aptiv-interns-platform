@@ -70,7 +70,7 @@ public class InternService {
     }
 
     @Transactional(readOnly = true)
-    public Object searchInterns(
+    public Page<InternResponse> searchInterns(
             String keyword,
             String department,
             String university,
@@ -88,8 +88,7 @@ public class InternService {
                 startDateFrom, startDateTo, endDateFrom, endDateTo);
 
         return internRepository.findAll(spec, pageable)
-                // ici aussi
-                .map(intern -> convertToResponse((Intern) intern));
+                .map(intern -> convertToResponse(intern)); // Explicitly use convertToResponse(Intern)
     }
 
     public Page<Intern> searchByKeyword(String keyword, Pageable pageable) {

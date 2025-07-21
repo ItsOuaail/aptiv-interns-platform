@@ -160,7 +160,7 @@ const DashboardPage = () => {
                   <label className="block text-sm font-medium text-gray-100 mb-2">Start Date</label>
                   <input
                     type="date"
-                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    onChange={(e) => setFilters({ ...filters, startDateFrom: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                   />
                 </div>

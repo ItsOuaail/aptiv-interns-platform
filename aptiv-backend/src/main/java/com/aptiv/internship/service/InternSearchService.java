@@ -32,7 +32,7 @@ public class InternSearchService {
     public Page<InternResponse> searchInterns(InternSearchDTO searchDTO) {
         Pageable pageable = createPageable(searchDTO);
 
-        Page<Intern> interns = (Page<Intern>) internService.searchInterns(
+        Page<InternResponse> interns = internService.searchInterns(
                 searchDTO.getKeyword(),
                 searchDTO.getDepartment(),
                 searchDTO.getUniversity(),
@@ -46,7 +46,7 @@ public class InternSearchService {
                 pageable
         );
 
-        return interns.map(this::convertToResponse);
+        return interns;
     }
 
     /**
