@@ -66,6 +66,7 @@ public class InternController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String university,
+
             @RequestParam(required = false) String major,
             @RequestParam(required = false) String supervisor,
             @RequestParam(required = false) Intern.InternshipStatus status,
@@ -75,7 +76,7 @@ public class InternController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateTo,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        Page<InternResponse> results = (Page<InternResponse>) internService.searchInterns(
+        Page<InternResponse> results = internService.searchInterns(
                 keyword, department, university, major, supervisor, status,
                 startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
 
