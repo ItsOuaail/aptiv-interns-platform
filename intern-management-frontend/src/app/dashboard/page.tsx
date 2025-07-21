@@ -1,9 +1,10 @@
 "use client";
-import { useState, useMemo } from 'react';
+
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
-import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
 import FileDropzone from '../../components/FileDropzone';
@@ -12,29 +13,42 @@ import MessageForm from '../../components/MessageForm';
 const DashboardPage = () => {
   const token = useRequireAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [messageInternId, setMessageInternId] = useState<number | null>(null);
-  
+  const [filters, setFilters] = useState({});
+  const [messageInternId, setMessageInternId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const size = 10;
 
-  // Fetch all data once - no dependency on search/filters
+  // Check for success query parameter on mount
+  useEffect(() => {
+    if (searchParams.get('success') === 'created') {
+      setSuccessMessage('Intern added successfully!');
+      // Auto-dismiss after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+        // Clear query parameter from URL
+        router.replace('/dashboard', undefined, { shallow: true });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, router]);
+
+  // Fetch all data once
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
   const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
   
-  // Fetch ALL interns once (you'll need to create this service function)
   const { data: allInternsData, isLoading, refetch } = useQuery({
-    queryKey: ['allInterns'], // No dependency on search/filters
-    queryFn: getAllInterns, // Fetch all interns at once
+    queryKey: ['allInterns'],
+    queryFn: getAllInterns,
   });
 
-  // Client-side filtering and pagination using useMemo to prevent unnecessary recalculations
+  // Client-side filtering and pagination
   const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
     if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     
-    // Handle different possible data structures
     let filtered = Array.isArray(allInternsData.data) 
       ? allInternsData.data 
       : Array.isArray(allInternsData.data.content) 
@@ -43,13 +57,11 @@ const DashboardPage = () => {
       ? allInternsData.data.interns
       : [];
 
-    // Safety check to ensure filtered is an array
     if (!Array.isArray(filtered)) {
       console.error('Expected array but got:', typeof filtered, filtered);
       return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     }
     
-    // Apply search filter
     if (search.trim()) {
       const searchLower = search.toLowerCase().trim();
       filtered = filtered.filter(intern => 
@@ -60,7 +72,6 @@ const DashboardPage = () => {
       );
     }
     
-    // Apply other filters
     if (filters.university?.trim()) {
       filtered = filtered.filter(intern => 
         intern.university?.toLowerCase().includes(filters.university.toLowerCase().trim())
@@ -79,7 +90,6 @@ const DashboardPage = () => {
       );
     }
     
-    // Calculate pagination
     const totalPages = Math.ceil(filtered.length / size);
     const startIndex = page * size;
     const paginatedInterns = filtered.slice(startIndex, startIndex + size);
@@ -91,15 +101,14 @@ const DashboardPage = () => {
     };
   }, [allInternsData?.data, search, filters, page, size]);
 
-  // Reset page when search or filters change
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = (value) => {
     setSearch(value);
-    setPage(0); // Reset to first page
+    setPage(0);
   };
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPage(0); // Reset to first page
+    setPage(0);
   };
 
   if (!token) return null;
@@ -118,14 +127,14 @@ const DashboardPage = () => {
     );
   }
 
-  const handleEdit = (id: number) => router.push(`/interns/${id}`);
-  const handleDelete = async (id: number) => {
+  const handleEdit = (id) => router.push(`/interns/${id}`);
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this intern?')) {
       await deleteIntern(id);
-      refetch(); // This will refetch all interns
+      refetch();
     }
   };
-  const handleSendMessage = (id: number) => setMessageInternId(id);
+  const handleSendMessage = (id) => setMessageInternId(id);
   const handleCreate = () => router.push('/interns/new');
 
   return (
@@ -145,6 +154,13 @@ const DashboardPage = () => {
               Streamline your internship program with advanced analytics and seamless management tools
             </p>
           </div>
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
+              {successMessage}
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -251,7 +267,7 @@ const DashboardPage = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={handleCreate}
-                  className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                  className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
