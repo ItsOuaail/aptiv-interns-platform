@@ -12,6 +12,11 @@ export const getInterns = (page: number, size: number, search?: string, filters?
   return api.get('/interns/search', { params });
 };
 
+// New function to get all interns for client-side filtering
+export const getAllInterns = () => {
+  return api.get('/interns/search');
+};
+
 // Other unchanged functions
 export const getInternCount = () => api.get('/interns/count');
 export const getActiveInternCount = () => api.get('/interns/active/count');

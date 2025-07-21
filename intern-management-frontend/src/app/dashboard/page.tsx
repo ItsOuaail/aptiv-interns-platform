@@ -1,7 +1,7 @@
 "use client";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getInterns, deleteIntern } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
@@ -19,13 +19,88 @@ const DashboardPage = () => {
   
   const size = 10;
 
+  // Fetch all data once - no dependency on search/filters
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
   const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
-  const { data: internsData, isLoading, refetch } = useQuery({
-    queryKey: ['interns', page, size, search, filters],
-    queryFn: () => getInterns(page, size, search, filters),
+  
+  // Fetch ALL interns once (you'll need to create this service function)
+  const { data: allInternsData, isLoading, refetch } = useQuery({
+    queryKey: ['allInterns'], // No dependency on search/filters
+    queryFn: getAllInterns, // Fetch all interns at once
   });
+
+  // Client-side filtering and pagination using useMemo to prevent unnecessary recalculations
+  const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
+    if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
+    
+    // Handle different possible data structures
+    let filtered = Array.isArray(allInternsData.data) 
+      ? allInternsData.data 
+      : Array.isArray(allInternsData.data.content) 
+      ? allInternsData.data.content 
+      : Array.isArray(allInternsData.data.interns)
+      ? allInternsData.data.interns
+      : [];
+
+    // Safety check to ensure filtered is an array
+    if (!Array.isArray(filtered)) {
+      console.error('Expected array but got:', typeof filtered, filtered);
+      return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
+    }
+    
+    // Apply search filter
+    if (search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      filtered = filtered.filter(intern => 
+        intern.name?.toLowerCase().includes(searchLower) ||
+        intern.university?.toLowerCase().includes(searchLower) ||
+        intern.department?.toLowerCase().includes(searchLower) ||
+        intern.email?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply other filters
+    if (filters.university?.trim()) {
+      filtered = filtered.filter(intern => 
+        intern.university?.toLowerCase().includes(filters.university.toLowerCase().trim())
+      );
+    }
+    
+    if (filters.department?.trim()) {
+      filtered = filtered.filter(intern => 
+        intern.department?.toLowerCase().includes(filters.department.toLowerCase().trim())
+      );
+    }
+    
+    if (filters.startDateFrom) {
+      filtered = filtered.filter(intern => 
+        new Date(intern.startDate) >= new Date(filters.startDateFrom)
+      );
+    }
+    
+    // Calculate pagination
+    const totalPages = Math.ceil(filtered.length / size);
+    const startIndex = page * size;
+    const paginatedInterns = filtered.slice(startIndex, startIndex + size);
+    
+    return { 
+      paginatedInterns, 
+      totalPages, 
+      filteredCount: filtered.length 
+    };
+  }, [allInternsData?.data, search, filters, page, size]);
+
+  // Reset page when search or filters change
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(0); // Reset to first page
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPage(0); // Reset to first page
+  };
 
   if (!token) return null;
 
@@ -43,14 +118,11 @@ const DashboardPage = () => {
     );
   }
 
-  const interns = internsData?.data.content || [];
-  const totalPages = internsData?.data.totalPages || 0;
-
   const handleEdit = (id: number) => router.push(`/interns/${id}`);
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this intern?')) {
       await deleteIntern(id);
-      refetch();
+      refetch(); // This will refetch all interns
     }
   };
   const handleSendMessage = (id: number) => setMessageInternId(id);
@@ -139,7 +211,7 @@ const DashboardPage = () => {
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search interns by name, university, or department..."
                   className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                 />
@@ -152,7 +224,7 @@ const DashboardPage = () => {
                   <input
                     type="text"
                     placeholder="Filter by university"
-                    onChange={(e) => setFilters({ ...filters, university: e.target.value })}
+                    onChange={(e) => handleFilterChange('university', e.target.value)}
                     className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                   />
                 </div>
@@ -160,7 +232,7 @@ const DashboardPage = () => {
                   <label className="block text-sm font-medium text-gray-100 mb-2">Start Date</label>
                   <input
                     type="date"
-                    onChange={(e) => setFilters({ ...filters, startDateFrom: e.target.value })}
+                    onChange={(e) => handleFilterChange('startDateFrom', e.target.value)}
                     className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                   />
                 </div>
@@ -169,7 +241,7 @@ const DashboardPage = () => {
                   <input
                     type="text"
                     placeholder="Filter by department"
-                    onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                    onChange={(e) => handleFilterChange('department', e.target.value)}
                     className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
                   />
                 </div>
@@ -198,12 +270,12 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">Interns Directory</h2>
             <div className="text-sm text-gray-300">
-              Showing {interns.length} of {totalInterns?.data.count || 0} interns
+              Showing {paginatedInterns.length} of {filteredCount} filtered interns ({totalInterns?.data || 0} total)
             </div>
           </div>
           
           <DataTable
-            interns={interns}
+            interns={paginatedInterns}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onSendMessage={handleSendMessage}
