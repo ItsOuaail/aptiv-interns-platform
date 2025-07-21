@@ -68,7 +68,7 @@ const NewInternPage = () => {
       router.push('/dashboard?success=created');
     } catch (err) {
       console.error('Error creating intern:', err);
-      alert('Error creating intern');
+      setErrors([err.response?.data?.message || 'Error creating intern']);
     }
   };
 
@@ -87,7 +87,7 @@ const NewInternPage = () => {
               </div>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4 text-center">Create New Intern</h1>
-            <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <input
                 name="firstName"
                 value={formData.firstName}
@@ -159,6 +159,7 @@ const NewInternPage = () => {
                 placeholder="Department"
                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
               />
+
               {errors.length > 0 && (
                 <ul className="text-red-500 text-sm">
                   {errors.map((err, idx) => (
@@ -166,15 +167,16 @@ const NewInternPage = () => {
                   ))}
                 </ul>
               )}
+
               <button
-                onClick={handleSubmit}
+                type="submit"
                 className="w-full p-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
               >
                 <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
