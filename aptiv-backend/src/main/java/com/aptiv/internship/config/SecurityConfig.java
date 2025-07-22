@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/interns").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns/batch").hasRole("HR")
                         .requestMatchers(HttpMethod.PUT, "/interns/**").hasRole("HR")
+                        .requestMatchers(HttpMethod.PATCH, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.DELETE, "/interns/**").hasRole("HR")
                         .requestMatchers("/messages/send").hasRole("HR")
                         .requestMatchers("/reports/**").hasRole("HR")
@@ -83,7 +84,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
