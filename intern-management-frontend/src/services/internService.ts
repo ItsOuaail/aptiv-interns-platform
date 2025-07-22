@@ -28,6 +28,8 @@ export const sendMessage = (id: number, data: { subject: string; content: string
   {api.post(`/interns/${id}/message`, data);
 console.log(data)}
 export const sendBulkMessage = (data: { internIds: number[]; subject: string; content: string }) =>
-  api.post('/interns/message/all', data);
+  {api.post('/interns/message/batch', data);
+    console.log(data.internIds);
+  }
 export const batchImport = (formData: FormData) =>
   api.post('/interns/batch', formData, { headers: { 'Content-Type': 'multipart/form-data' } });

@@ -5,9 +5,12 @@ interface DataTableProps {
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onSendMessage: (id: number) => void;
+  selectedInternIds: number[];
+  onToggleSelect: (id: number) => void;
+  onSelectAll: (select: boolean) => void;
 }
 
-const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps) => {
+const DataTable = ({ interns, onEdit, onDelete, onSendMessage, selectedInternIds, onToggleSelect, onSelectAll }: DataTableProps) => {
   if (interns.length === 0) {
     return (
       <div className="bg-gray-600/50 backdrop-blur-sm border border-gray-500 rounded-2xl p-12 text-center">
@@ -30,6 +33,14 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
           <table className="min-w-full bg-gray-600/30 backdrop-blur-sm border border-gray-500 rounded-2xl">
             <thead className="bg-gradient-to-r from-gray-700/80 to-gray-600/80 backdrop-blur-sm">
               <tr>
+                <th className="px-6 py-4">
+                  <input
+                    type="checkbox"
+                    checked={interns.length > 0 && interns.every(intern => selectedInternIds.includes(intern.id))}
+                    onChange={(e) => onSelectAll(e.target.checked)}
+                    className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 rounded"
+                  />
+                </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-200 uppercase tracking-wider border-b border-gray-500">
                   ID
                 </th>
@@ -67,6 +78,14 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
                     index % 2 === 0 ? 'bg-gray-600/20' : 'bg-gray-600/40'
                   }`}
                 >
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedInternIds.includes(intern.id)}
+                      onChange={() => onToggleSelect(intern.id)}
+                      className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 rounded"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
@@ -148,6 +167,12 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage }: DataTableProps)
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={selectedInternIds.includes(intern.id)}
+                  onChange={() => onToggleSelect(intern.id)}
+                  className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 rounded"
+                />
                 <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-orange-400">#{intern.id}</span>
                 </div>

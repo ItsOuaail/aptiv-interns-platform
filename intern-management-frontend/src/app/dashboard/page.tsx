@@ -17,18 +17,17 @@ const DashboardPage = () => {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({});
-  const [messageInternId, setMessageInternId] = useState(null);
+  const [messageInternIds, setMessageInternIds] = useState(null); // Updated to handle array
   const [successMessage, setSuccessMessage] = useState(null);
+  const [selectedInternIds, setSelectedInternIds] = useState([]); // For bulk selection
   const size = 10;
 
   // Check for success query parameter on mount
   useEffect(() => {
     if (searchParams.get('success') === 'created') {
       setSuccessMessage('Intern added successfully!');
-      // Auto-dismiss after 5 seconds
       const timer = setTimeout(() => {
         setSuccessMessage(null);
-        // Clear query parameter from URL
         router.replace('/dashboard', undefined, { shallow: true });
       }, 5000);
       return () => clearTimeout(timer);
@@ -134,7 +133,27 @@ const DashboardPage = () => {
       refetch();
     }
   };
-  const handleSendMessage = (id) => setMessageInternId(id);
+  const handleSendMessage = (id) => setMessageInternIds([id]); // Single message
+
+  // Selection handlers for bulk messaging
+  const onToggleSelect = (id) => {
+    setSelectedInternIds(prev => 
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    );
+  };
+
+  const onSelectAll = (select) => {
+    if (select) {
+      setSelectedInternIds(prev => {
+        const newSelected = new Set(prev);
+        paginatedInterns.forEach(intern => newSelected.add(intern.id));
+        return Array.from(newSelected);
+      });
+    } else {
+      setSelectedInternIds(prev => prev.filter(id => !paginatedInterns.some(intern => intern.id === id)));
+    }
+  };
+
   const handleCreate = () => router.push('/interns/new');
 
   return (
@@ -210,6 +229,19 @@ const DashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {/* Bulk Message Section */}
+        {selectedInternIds.length > 0 && (
+          <div className="mb-4 p-4 bg-gray-950 rounded-2xl border border-gray-700 flex items-center justify-between">
+            <span className="text-white">{selectedInternIds.length} interns selected</span>
+            <button
+              onClick={() => setMessageInternIds(selectedInternIds)}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Send Message to Selected
+            </button>
+          </div>
+        )}
+
         {/* Search and Filters */}
         <div className="relative bg-gray-950 shadow-xl border border-orange-500/50 rounded-2xl p-8 mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
@@ -295,6 +327,9 @@ const DashboardPage = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onSendMessage={handleSendMessage}
+            selectedInternIds={selectedInternIds}
+            onToggleSelect={onToggleSelect}
+            onSelectAll={onSelectAll}
           />
 
           {/* Pagination */}
@@ -327,10 +362,14 @@ const DashboardPage = () => {
       </div>
 
       {/* Message Modal */}
-      {messageInternId && (
+      {messageInternIds && (
         <MessageForm 
-          internId={messageInternId} 
-          onClose={() => setMessageInternId(null)} 
+          internIds={messageInternIds} 
+          onClose={() => setMessageInternIds(null)} 
+          onSuccess={() => {
+            setSuccessMessage(messageInternIds.length > 1 ? 'Bulk message sent successfully!' : 'Message sent successfully!');
+            setTimeout(() => setSuccessMessage(null), 5000);
+          }}
         />
       )}
     </div>
