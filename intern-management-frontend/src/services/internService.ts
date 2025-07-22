@@ -25,7 +25,8 @@ export const createIntern = (data: any) => api.post('/interns', data);
 export const updateIntern = (id: number, data: any) => api.put(`/interns/${id}`, data);
 export const deleteIntern = (id: number) => api.delete(`/interns/${id}`);
 export const sendMessage = (id: number, data: { subject: string; content: string }) =>
-  api.post(`/interns/${id}/message`, data);
+  {api.post(`/interns/${id}/message`, data);
+console.log(data)}
 export const sendBulkMessage = (data: { internIds: number[]; subject: string; content: string }) =>
   api.post('/interns/message/all', data);
 export const batchImport = (formData: FormData) =>
