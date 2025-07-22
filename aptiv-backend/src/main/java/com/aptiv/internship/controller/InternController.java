@@ -180,10 +180,10 @@
                 return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
             }
         }
-    
-        @PutMapping("/{id}")
+
+        @PatchMapping("/{id}")
         @PreAuthorize("hasRole('HR')")
-        public ResponseEntity<InternResponse> updateIntern(@PathVariable Long id, @RequestBody InternRequest request) {
+        public ResponseEntity<InternResponse> patchIntern(@PathVariable Long id, @RequestBody InternRequest request) {
             return ResponseEntity.ok(internService.updateIntern(id, request));
         }
     

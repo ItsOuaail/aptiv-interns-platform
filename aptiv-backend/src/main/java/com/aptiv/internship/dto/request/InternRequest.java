@@ -1,7 +1,9 @@
 package com.aptiv.internship.dto.request;
 
+import com.aptiv.internship.entity.Intern;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.Getter;
 
 import java.time.LocalDate;
 
@@ -48,8 +50,15 @@ public class InternRequest {
     @Size(min = 2, max = 100, message = "Department must be between 2 and 100 characters")
     private String department;
 
+    @Getter
+    @NotBlank(message = "status")
+    @Size(min = 2, max = 100, message = "Department must be between 2 and 100 characters")
+    private Intern.InternshipStatus status;
+
+
     @AssertTrue(message = "End date must be after start date")
     public boolean isEndDateAfterStartDate() {
         return endDate == null || startDate == null || endDate.isAfter(startDate);
     }
+
 }

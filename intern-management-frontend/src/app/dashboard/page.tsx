@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
@@ -128,11 +128,18 @@ const DashboardPage = () => {
 
   const handleEdit = (id) => router.push(`/interns/${id}`);
   const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this intern?')) {
-      await deleteIntern(id);
+  if (confirm('Are you sure you want to terminate this intern?')) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const data = { status: 'TERMINATED', endDate: today };
+      await updateIntern(id, data);
       refetch();
+    } catch (error) {
+      console.error('Error terminating intern:', error);
+      alert('Failed to terminate intern. Please try again.');
     }
-  };
+  }
+};
   const handleSendMessage = (id) => setMessageInternIds([id]); // Single message
 
   // Selection handlers for bulk messaging

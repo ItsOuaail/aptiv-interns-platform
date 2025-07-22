@@ -234,16 +234,40 @@ public class InternService {
                     return new ResourceNotFoundException("Intern", "id", id);
                 });
 
-        intern.setFirstName(request.getFirstName());
-        intern.setLastName(request.getLastName());
-        intern.setEmail(request.getEmail());
-        intern.setPhone(request.getPhone());
-        intern.setUniversity(request.getUniversity());
-        intern.setMajor(request.getMajor());
-        intern.setStartDate(request.getStartDate());
-        intern.setEndDate(request.getEndDate());
-        intern.setSupervisor(request.getSupervisor());
-        intern.setDepartment(request.getDepartment());
+        // Only update non-null fields
+        if (request.getFirstName() != null) {
+            intern.setFirstName(request.getFirstName());
+        }
+        if (request.getStatus() != null) {
+            intern.setStatus(request.getStatus());
+        }
+        if (request.getLastName() != null) {
+            intern.setLastName(request.getLastName());
+        }
+        if (request.getEmail() != null) {
+            intern.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null) {
+            intern.setPhone(request.getPhone());
+        }
+        if (request.getUniversity() != null) {
+            intern.setUniversity(request.getUniversity());
+        }
+        if (request.getMajor() != null) {
+            intern.setMajor(request.getMajor());
+        }
+        if (request.getStartDate() != null) {
+            intern.setStartDate(request.getStartDate());
+        }
+        if (request.getEndDate() != null) {
+            intern.setEndDate(request.getEndDate());
+        }
+        if (request.getSupervisor() != null) {
+            intern.setSupervisor(request.getSupervisor());
+        }
+        if (request.getDepartment() != null) {
+            intern.setDepartment(request.getDepartment());
+        }
 
         try {
             Intern updatedIntern = internRepository.save(intern);
