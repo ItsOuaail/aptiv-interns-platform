@@ -200,17 +200,17 @@ public class InternService {
         }
         if (!duplicateEmails.isEmpty()) {
             log.warn("Duplicate emails found in batch: {}", duplicateEmails);
-            throw new DuplicateInternException("Duplicate emails in batch: " + String.join(", ", duplicateEmails));
+            throw new IllegalArgumentException("Duplicate emails in batch: " + String.join(", ", duplicateEmails));
         }
 
         // Check for existing emails in the database
-        List<String> existingEmails = internRepository. findByEmail(String.valueOf(new ArrayList<>(emailsInBatch)))
+        List<String> existingEmails = internRepository.findByEmailIn(new ArrayList<>(emailsInBatch))
                 .stream()
                 .map(Intern::getEmail)
                 .collect(Collectors.toList());
         if (!existingEmails.isEmpty()) {
             log.warn("Existing emails found in database: {}", existingEmails);
-            throw new DuplicateInternException("Interns with these emails already exist: " + String.join(", ", existingEmails));
+            throw new IllegalArgumentException("Interns with these emails already exist (Delete them and upload the file again): " + String.join(", ", existingEmails));
         }
 
         // Save all interns

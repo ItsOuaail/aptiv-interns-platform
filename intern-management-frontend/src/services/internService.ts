@@ -13,7 +13,7 @@ export const getInterns = (page: number, size: number, search?: string, filters?
 };
 
 export const getAllInterns = () => {
-  return api.get('/interns/search'); // Fixed: "returnDeux" -> "return"
+  return api.get('/interns/search');
 };
 
 export const getInternCount = () => api.get('/interns/count');
@@ -23,20 +23,25 @@ export const createIntern = (data: any) => api.post('/interns', data);
 
 export const updateIntern = (id: number, data: any) => {
   console.log(id, data);
-  return api.patch(`/interns/${id}`, data); // Fixed: Added return statement
+  return api.patch(`/interns/${id}`, data);
 };
 
 export const deleteIntern = (id: number) => api.delete(`/interns/${id}`);
 
 export const sendMessage = (id: number, data: { subject: string; content: string }) => {
   console.log(data);
-  return api.post(`/interns/${id}/message`, data); // Fixed: Added return statement
+  return api.post(`/interns/${id}/message`, data);
 };
 
 export const sendBulkMessage = (data: { internIds: number[]; subject: string; content: string }) => {
   console.log(data.internIds);
-  return api.post('/interns/message/batch', data); // Fixed: Added return statement
+  return api.post('/interns/message/batch', data);
 };
 
 export const batchImport = (formData: FormData) =>
   api.post('/interns/batch', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+// New function to fetch notifications
+export const getNotifications = (page = 0, size = 20) => {
+  return api.get('/notifications', { params: { page, size } });
+};

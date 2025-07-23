@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport, getNotifications } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
@@ -19,11 +19,25 @@ const DashboardPage = () => {
   const [filters, setFilters] = useState({});
   const [messageInternIds, setMessageInternIds] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [selectedInternIds, setSelectedInternIds] = useState([]);
   const [viewMode, setViewMode] = useState('active');
   const size = 10;
 
   const queryClient = useQueryClient();
+
+  // Fetch notifications
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => getNotifications(0, 20),
+  });
+
+  // Filter for INTERNSHIP_ENDING notifications
+  const internshipEndingNotifications = useMemo(() => {
+    return notificationsData?.data.content?.filter(
+      notif => notif.type === 'INTERNSHIP_ENDING'
+    ) || [];
+  }, [notificationsData]);
 
   // Sync viewMode with URL query parameter
   useEffect(() => {
@@ -36,6 +50,7 @@ const DashboardPage = () => {
     }
   }, [searchParams, router]);
 
+  // Handle success message from URL (e.g., after creating an intern)
   useEffect(() => {
     if (searchParams.get('success') === 'created') {
       setSuccessMessage('Intern added successfully!');
@@ -47,19 +62,23 @@ const DashboardPage = () => {
     }
   }, [searchParams, router]);
 
+  // Reset page when viewMode changes
   useEffect(() => {
-    setPage(0); // Reset page when viewMode changes
+    setPage(0);
   }, [viewMode]);
 
+  // Fetch intern statistics
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
   const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
   
+  // Fetch all interns
   const { data: allInternsData, isLoading } = useQuery({
     queryKey: ['allInterns'],
     queryFn: getAllInterns,
   });
 
+  // Mutation for terminating an intern
   const terminateInternMutation = useMutation({
     mutationFn: async (id) => {
       const today = new Date().toISOString().split('T')[0];
@@ -79,12 +98,42 @@ const DashboardPage = () => {
     },
   });
 
+  // Mutation for batch import
+  const uploadMutation = useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return batchImport(formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['allInterns']);
+      queryClient.invalidateQueries(['totalInterns']);
+      queryClient.invalidateQueries(['activeInterns']);
+      queryClient.invalidateQueries(['upcomingEndDates']);
+      setSuccessMessage('Interns added successfully!');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      setErrorMessage(null);
+    },
+    onError: (error) => {
+      setErrorMessage(error.response.data.message || 'Failed to upload Excel file. Please try again.');
+      console.log('Error uploading file:', error.response.data);
+    },
+  });
+
   const handleDelete = (id) => {
     if (confirm('Are you sure you want to terminate this intern?')) {
       terminateInternMutation.mutate(id);
     }
   };
 
+  const handleFileDrop = (acceptedFiles) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      uploadMutation.mutate(file);
+    }
+  };
+
+  // Filter and paginate intern data
   const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
     if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     
@@ -163,7 +212,7 @@ const DashboardPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar notifications={internshipEndingNotifications} />
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
@@ -199,7 +248,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar notifications={internshipEndingNotifications} />
       
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
@@ -217,6 +266,12 @@ const DashboardPage = () => {
           {successMessage && (
             <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
               {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="mb-8 p-4 bg-red-500/20 border border-red-500 rounded-2xl text-center text-red-500 font-medium animate-fade-in">
+              {errorMessage}
             </div>
           )}
 
@@ -357,7 +412,7 @@ const DashboardPage = () => {
                   </svg>
                 </button>
                 <div className="flex-1">
-                  <FileDropzone />
+                  <FileDropzone onDrop={handleFileDrop} />
                 </div>
               </div>
             </div>
