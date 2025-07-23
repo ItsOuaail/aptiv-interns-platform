@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
@@ -17,34 +17,64 @@ const DashboardPage = () => {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({});
-  const [messageInternIds, setMessageInternIds] = useState(null); // Updated to handle array
+  const [messageInternIds, setMessageInternIds] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [selectedInternIds, setSelectedInternIds] = useState([]); // For bulk selection
+  const [selectedInternIds, setSelectedInternIds] = useState([]);
   const size = 10;
 
-  // Check for success query parameter on mount
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     if (searchParams.get('success') === 'created') {
       setSuccessMessage('Intern added successfully!');
       const timer = setTimeout(() => {
-        setSuccessMessage(null);
+        setSuccessamu(null);
         router.replace('/dashboard', undefined, { shallow: true });
       }, 5000);
       return () => clearTimeout(timer);
     }
   }, [searchParams, router]);
 
-  // Fetch all data once
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
-  const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
-  const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
+  const { data: activeInterns, refetch: refetchActiveInterns } = useQuery({ 
+    queryKey: ['activeInterns'], 
+    queryFn: getActiveInternCount 
+  });
+  const { data: upcomingEndDates } = useQuery({ 
+    queryKey: ['upcomingEndDates'], 
+    queryFn: getUpcomingEndDatesCount 
+  });
   
   const { data: allInternsData, isLoading, refetch } = useQuery({
     queryKey: ['allInterns'],
     queryFn: getAllInterns,
   });
 
-  // Client-side filtering and pagination
+  const terminateInternMutation = useMutation({
+    mutationFn: async (id) => {
+      const today = new Date().toISOString().split('T')[0];
+      const data = { status: 'TERMINATED', endDate: today };
+      await updateIntern(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['allInterns']);
+      queryClient.invalidateQueries(['activeInterns']);
+      queryClient.invalidateQueries(['upcomingEndDates']);
+      setSuccessMessage('Intern terminated successfully!');
+      setTimeout(() => setSuccessMessage(null), 5000);
+    },
+    onError: (error) => {
+      console.error('Error terminating intern:', error);
+      alert('Failed to terminate intern. Please try again.');
+    },
+  });
+
+  const handleDelete = (id) => {
+    if (confirm('Are you sure you want to terminate this intern?')) {
+      terminateInternMutation.mutate(id);
+    }
+  };
+
   const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
     if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     
@@ -127,22 +157,8 @@ const DashboardPage = () => {
   }
 
   const handleEdit = (id) => router.push(`/interns/${id}`);
-  const handleDelete = async (id) => {
-  if (confirm('Are you sure you want to terminate this intern?')) {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const data = { status: 'TERMINATED', endDate: today };
-      await updateIntern(id, data);
-      refetch();
-    } catch (error) {
-      console.error('Error terminating intern:', error);
-      alert('Failed to terminate intern. Please try again.');
-    }
-  }
-};
-  const handleSendMessage = (id) => setMessageInternIds([id]); // Single message
+  const handleSendMessage = (id) => setMessageInternIds([id]);
 
-  // Selection handlers for bulk messaging
   const onToggleSelect = (id) => {
     setSelectedInternIds(prev => 
       prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
@@ -167,7 +183,6 @@ const DashboardPage = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       
-      {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -181,14 +196,12 @@ const DashboardPage = () => {
             </p>
           </div>
 
-          {/* Success Message */}
           {successMessage && (
             <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
               {successMessage}
             </div>
           )}
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
               <div className="flex items-center justify-between">
@@ -236,7 +249,6 @@ const DashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        {/* Bulk Message Section */}
         {selectedInternIds.length > 0 && (
           <div className="mb-4 p-4 bg-gray-950 rounded-2xl border border-gray-700 flex items-center justify-between">
             <span className="text-white">{selectedInternIds.length} interns selected</span>
@@ -249,14 +261,12 @@ const DashboardPage = () => {
           </div>
         )}
 
-        {/* Search and Filters */}
         <div className="relative bg-gray-950 shadow-xl border border-orange-500/50 rounded-2xl p-8 mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
           <div className="relative">
             <h2 className="text-2xl font-semibold text-white mb-6">Search & Filters</h2>
             
             <div className="space-y-6">
-              {/* Search Bar */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +282,6 @@ const DashboardPage = () => {
                 />
               </div>
 
-              {/* Filter Controls */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-100 mb-2">University</label>
@@ -302,7 +311,6 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={handleCreate}
@@ -320,7 +328,6 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Data Table */}
         <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">Interns Directory</h2>
@@ -339,7 +346,6 @@ const DashboardPage = () => {
             onSelectAll={onSelectAll}
           />
 
-          {/* Pagination */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-300">
             <div className="text-sm text-gray-100">
               Page {page + 1} of {totalPages}
@@ -368,7 +374,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Message Modal */}
       {messageInternIds && (
         <MessageForm 
           internIds={messageInternIds} 
