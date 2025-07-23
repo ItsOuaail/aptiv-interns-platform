@@ -20,10 +20,21 @@ const DashboardPage = () => {
   const [messageInternIds, setMessageInternIds] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedInternIds, setSelectedInternIds] = useState([]);
-  const [viewMode, setViewMode] = useState('active'); // Added viewMode state
+  const [viewMode, setViewMode] = useState('active');
   const size = 10;
 
   const queryClient = useQueryClient();
+
+  // Sync viewMode with URL query parameter
+  useEffect(() => {
+    const view = searchParams.get('view');
+    if (view === 'all' || view === 'active' || view === 'upcoming') {
+      setViewMode(view);
+    } else {
+      setViewMode('active');
+      router.replace('/dashboard?view=active', undefined, { shallow: true });
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (searchParams.get('success') === 'created') {
@@ -37,20 +48,14 @@ const DashboardPage = () => {
   }, [searchParams, router]);
 
   useEffect(() => {
-    setPage(0); // Reset page to 0 when viewMode changes
+    setPage(0); // Reset page when viewMode changes
   }, [viewMode]);
 
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
-  const { data: activeInterns, refetch: refetchActiveInterns } = useQuery({ 
-    queryKey: ['activeInterns'], 
-    queryFn: getActiveInternCount 
-  });
-  const { data: upcomingEndDates } = useQuery({ 
-    queryKey: ['upcomingEndDates'], 
-    queryFn: getUpcomingEndDatesCount 
-  });
+  const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
+  const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
   
-  const { data: allInternsData, isLoading, refetch } = useQuery({
+  const { data: allInternsData, isLoading } = useQuery({
     queryKey: ['allInterns'],
     queryFn: getAllInterns,
   });
@@ -124,7 +129,6 @@ const DashboardPage = () => {
       );
     }
     
-    // Apply viewMode filtering
     if (viewMode === 'active') {
       filtered = filtered.filter(intern => intern.status === 'ACTIVE');
     } else if (viewMode === 'upcoming') {
@@ -136,17 +140,12 @@ const DashboardPage = () => {
         new Date(intern.endDate) <= sevenDaysFromNow
       );
     }
-    // 'all' view shows all interns, no additional filter
 
     const totalPages = Math.ceil(filtered.length / size);
     const startIndex = page * size;
     const paginatedInterns = filtered.slice(startIndex, startIndex + size);
     
-    return { 
-      paginatedInterns, 
-      totalPages, 
-      filteredCount: filtered.length 
-    };
+    return { paginatedInterns, totalPages, filteredCount: filtered.length };
   }, [allInternsData?.data, search, filters, page, size, viewMode]);
 
   const handleSearchChange = (value) => {
@@ -224,7 +223,10 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div 
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'all' ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => setViewMode('all')}
+              onClick={() => {
+                setViewMode('all');
+                router.push('/dashboard?view=all');
+              }}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -241,7 +243,10 @@ const DashboardPage = () => {
 
             <div 
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'active' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => setViewMode('active')}
+              onClick={() => {
+                setViewMode('active');
+                router.push('/dashboard?view=active');
+              }}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -250,7 +255,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11 Rekordbox6-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
@@ -258,7 +263,10 @@ const DashboardPage = () => {
 
             <div 
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'upcoming' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => setViewMode('upcoming')}
+              onClick={() => {
+                setViewMode('upcoming');
+                router.push('/dashboard?view=upcoming');
+              }}
             >
               <div className="flex items-center justify-between">
                 <div>
