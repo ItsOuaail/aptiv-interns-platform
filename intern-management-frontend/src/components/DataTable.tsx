@@ -143,11 +143,11 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage, selectedInternIds
                       <button
                         onClick={() => onDelete(intern.id)}
                         className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all duration-300 transform hover:scale-105 border border-red-500/30 hover:border-red-500/50"
-                        title="Delete Intern"
+                        title="Terminate Intern"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v1H9V4a1 1 0 011-1zm-5 4h14" />
-                        </svg>
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+</svg>
                       </button>
                     </div>
                   </td>
