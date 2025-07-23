@@ -150,6 +150,7 @@ public interface InternRepository extends JpaRepository<Intern, Long>, JpaSpecif
 
     @Query("SELECT DISTINCT i.supervisor FROM Intern i WHERE i.supervisor IS NOT NULL ORDER BY i.supervisor")
     List<String> findDistinctSupervisors();
+    List<Intern> findByEmailIn(List<String> emails);
 
     //Optional<Object> findAll(Specification<Intern> spec, Pageable pageable);
 

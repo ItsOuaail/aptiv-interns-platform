@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
@@ -19,6 +19,7 @@ const DashboardPage = () => {
   const [filters, setFilters] = useState({});
   const [messageInternIds, setMessageInternIds] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [selectedInternIds, setSelectedInternIds] = useState([]);
   const [viewMode, setViewMode] = useState('active');
   const size = 10;
@@ -36,6 +37,7 @@ const DashboardPage = () => {
     }
   }, [searchParams, router]);
 
+  // Handle success message from URL (e.g., after creating an intern)
   useEffect(() => {
     if (searchParams.get('success') === 'created') {
       setSuccessMessage('Intern added successfully!');
@@ -47,19 +49,23 @@ const DashboardPage = () => {
     }
   }, [searchParams, router]);
 
+  // Reset page when viewMode changes
   useEffect(() => {
-    setPage(0); // Reset page when viewMode changes
+    setPage(0);
   }, [viewMode]);
 
+  // Fetch intern statistics
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
   const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
   
+  // Fetch all interns
   const { data: allInternsData, isLoading } = useQuery({
     queryKey: ['allInterns'],
     queryFn: getAllInterns,
   });
 
+  // Mutation for terminating an intern
   const terminateInternMutation = useMutation({
     mutationFn: async (id) => {
       const today = new Date().toISOString().split('T')[0];
@@ -79,12 +85,42 @@ const DashboardPage = () => {
     },
   });
 
+  // Mutation for batch import
+  const uploadMutation = useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return batchImport(formData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['allInterns']);
+      queryClient.invalidateQueries(['totalInterns']);
+      queryClient.invalidateQueries(['activeInterns']);
+      queryClient.invalidateQueries(['upcomingEndDates']);
+      setSuccessMessage('Interns added successfully!');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      setErrorMessage(null);
+    },
+    onError: (error) => {
+      setErrorMessage(error.response.data.message || 'Failed to upload Excel file. Please try again.');
+      console.log('Error uploading file:', error.response.data);
+    },
+  });
+
   const handleDelete = (id) => {
     if (confirm('Are you sure you want to terminate this intern?')) {
       terminateInternMutation.mutate(id);
     }
   };
 
+  const handleFileDrop = (acceptedFiles) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      uploadMutation.mutate(file);
+    }
+  };
+
+  // Filter and paginate intern data
   const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
     if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     
@@ -217,6 +253,12 @@ const DashboardPage = () => {
           {successMessage && (
             <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
               {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="mb-8 p-4 bg-red-500/20 border border-red-500 rounded-2xl text-center text-red-500 font-medium animate-fade-in">
+              {errorMessage}
             </div>
           )}
 
@@ -357,7 +399,7 @@ const DashboardPage = () => {
                   </svg>
                 </button>
                 <div className="flex-1">
-                  <FileDropzone />
+                  <FileDropzone onDrop={handleFileDrop} />
                 </div>
               </div>
             </div>

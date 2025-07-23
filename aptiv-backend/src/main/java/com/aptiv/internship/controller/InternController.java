@@ -4,6 +4,7 @@
     import com.aptiv.internship.dto.request.BroadcastMessageRequest;
     import com.aptiv.internship.dto.request.InternRequest;
     import com.aptiv.internship.dto.request.MessageRequest;
+    import com.aptiv.internship.dto.response.BatchSuccessResponse;
     import com.aptiv.internship.dto.response.InternResponse;
     import com.aptiv.internship.dto.response.InternSearchResponseDTO;
     import com.aptiv.internship.dto.response.MessageResponse;
@@ -27,7 +28,8 @@
     import java.io.IOException;
     import java.time.LocalDate;
     import java.util.List;
-    
+    import java.util.Map;
+
     @RestController
     @RequestMapping("/interns")
     @RequiredArgsConstructor
@@ -164,20 +166,18 @@
         public ResponseEntity<InternResponse> getMyInternProfile() {
             return ResponseEntity.ok(internService.getCurrentInternProfile());
         }
-    
+
         @PostMapping("/batch")
         @PreAuthorize("hasRole('HR')")
-        public ResponseEntity<String> createInternsBatch(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal User user) {
+        public ResponseEntity<Map<String, Object>> createInternsBatch(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal User user) {
             try {
                 List<InternRequest> requests = excelParser.parseInterns(file);
                 internService.createInternsBatch(requests, user);
-                return ResponseEntity.ok("Interns added successfully: " + requests.size());
+                return ResponseEntity.ok(Map.of("success", true, "message", "Interns added successfully", "count", requests.size()));
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body("Error in file data: " + e.getMessage());
-            } catch (IOException e) {
-                return ResponseEntity.badRequest().body("Error reading file: " + e.getMessage());
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
             } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Error processing file"));
             }
         }
 
