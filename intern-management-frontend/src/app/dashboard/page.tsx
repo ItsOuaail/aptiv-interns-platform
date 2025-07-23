@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport, getNotifications } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
@@ -25,6 +25,19 @@ const DashboardPage = () => {
   const size = 10;
 
   const queryClient = useQueryClient();
+
+  // Fetch notifications
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => getNotifications(0, 20),
+  });
+
+  // Filter for INTERNSHIP_ENDING notifications
+  const internshipEndingNotifications = useMemo(() => {
+    return notificationsData?.data.content?.filter(
+      notif => notif.type === 'INTERNSHIP_ENDING'
+    ) || [];
+  }, [notificationsData]);
 
   // Sync viewMode with URL query parameter
   useEffect(() => {
@@ -199,7 +212,7 @@ const DashboardPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar notifications={internshipEndingNotifications} />
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
@@ -235,7 +248,7 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar notifications={internshipEndingNotifications} />
       
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
