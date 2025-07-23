@@ -37,7 +37,7 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    @Scheduled(cron = "0 56 21 * * ?") // Daily at 9 AM
+    @Scheduled(cron = "0 45 8 * * ?") // Daily at 9 AM
     public void checkInternshipEndDates() {
         LocalDate today = LocalDate.now();
         List<Intern> endingSoon = internRepository.findByEndDateBetween(
