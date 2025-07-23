@@ -20,6 +20,7 @@ const DashboardPage = () => {
   const [messageInternIds, setMessageInternIds] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [selectedInternIds, setSelectedInternIds] = useState([]);
+  const [viewMode, setViewMode] = useState('active'); // Added viewMode state
   const size = 10;
 
   const queryClient = useQueryClient();
@@ -28,12 +29,16 @@ const DashboardPage = () => {
     if (searchParams.get('success') === 'created') {
       setSuccessMessage('Intern added successfully!');
       const timer = setTimeout(() => {
-        setSuccessamu(null);
+        setSuccessMessage(null);
         router.replace('/dashboard', undefined, { shallow: true });
       }, 5000);
       return () => clearTimeout(timer);
     }
   }, [searchParams, router]);
+
+  useEffect(() => {
+    setPage(0); // Reset page to 0 when viewMode changes
+  }, [viewMode]);
 
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns, refetch: refetchActiveInterns } = useQuery({ 
@@ -119,6 +124,20 @@ const DashboardPage = () => {
       );
     }
     
+    // Apply viewMode filtering
+    if (viewMode === 'active') {
+      filtered = filtered.filter(intern => intern.status === 'ACTIVE');
+    } else if (viewMode === 'upcoming') {
+      const today = new Date();
+      const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(intern => 
+        intern.status === 'ACTIVE' &&
+        new Date(intern.endDate) >= today &&
+        new Date(intern.endDate) <= sevenDaysFromNow
+      );
+    }
+    // 'all' view shows all interns, no additional filter
+
     const totalPages = Math.ceil(filtered.length / size);
     const startIndex = page * size;
     const paginatedInterns = filtered.slice(startIndex, startIndex + size);
@@ -128,7 +147,7 @@ const DashboardPage = () => {
       totalPages, 
       filteredCount: filtered.length 
     };
-  }, [allInternsData?.data, search, filters, page, size]);
+  }, [allInternsData?.data, search, filters, page, size, viewMode]);
 
   const handleSearchChange = (value) => {
     setSearch(value);
@@ -203,7 +222,10 @@ const DashboardPage = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
+            <div 
+              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'all' ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
+              onClick={() => setViewMode('all')}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Total Interns</p>
@@ -217,7 +239,10 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
+            <div 
+              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'active' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
+              onClick={() => setViewMode('active')}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Active Interns</p>
@@ -225,13 +250,16 @@ const DashboardPage = () => {
                 </div>
                 <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11 Rekordbox6-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-950 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300">
+            <div 
+              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'upcoming' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
+              onClick={() => setViewMode('upcoming')}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
@@ -330,7 +358,9 @@ const DashboardPage = () => {
 
         <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Interns Directory</h2>
+            <h2 className="text-2xl font-bold text-white">
+              {viewMode === 'all' ? 'All Interns' : viewMode === 'active' ? 'Active Interns' : 'Interns with Upcoming End Dates'}
+            </h2>
             <div className="text-sm text-gray-300">
               Showing {paginatedInterns.length} of {filteredCount} filtered interns ({totalInterns?.data || 0} total)
             </div>
