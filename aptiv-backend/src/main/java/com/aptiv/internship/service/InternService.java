@@ -1,5 +1,6 @@
 package com.aptiv.internship.service;
 
+import java.security.SecureRandom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -41,22 +43,145 @@ public class InternService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public InternResponse createIntern(InternRequest request) {
+        // Check if intern already exists
         if (internRepository.existsByEmail(request.getEmail())) {
             log.warn("Attempt to create intern with existing email: {}", request.getEmail());
             throw new DuplicateInternException("Intern with email " + request.getEmail() + " already exists");
         }
 
+        // Get the current HR user
         User hrUser = getCurrentUser();
         Intern intern = mapToEntity(request);
         intern.setUser(hrUser);
 
+        // Create User entity for the intern
+        User internUser = new User();
+        internUser.setEmail(request.getEmail());
+        internUser.setFirstName(request.getFirstName());
+        internUser.setLastName(request.getLastName());
+        internUser.setRole(User.Role.INTERN);
+        internUser.setCreatedAt(LocalDateTime.now());
+        internUser.setUpdatedAt(LocalDateTime.now());
+
+        // Generate and set a random password
+        String randomPassword = generateRandomPassword();
+        internUser.setPassword(passwordEncoder.encode(randomPassword)); // Set the plain-text password
+        // In production, hash it using passwordEncoder.encode(randomPassword)
+
         try {
-            return convertToResponse(internRepository.save(intern));
+            // Save the user entity
+            userRepository.save(internUser);
+            Intern savedIntern = internRepository.save(intern);
+
+            // Send welcome email with the random password
+            String subject = "Welcome to Your Internship at Aptiv!";
+            String body = buildWelcomeEmailBody(request, hrUser, randomPassword);
+            emailService.sendEmail(intern.getEmail(), subject, body);
+
+            // Create a notification
+            Notification notification = notificationService.createNotification(
+                    subject,
+                    "Welcome to your internship! Please review your details and contact HR if needed.",
+                    Notification.NotificationType.WELCOME_MESSAGE,
+                    internUser,
+                    savedIntern
+            );
+
+            return convertToResponse(savedIntern);
         } catch (Exception e) {
-            log.error("Failed to save intern with email {}: {}", request.getEmail(), e.getMessage(), e);
+            log.error("Failed to save intern with email {} or send welcome email: {}", request.getEmail(), e.getMessage(), e);
             throw new RuntimeException("Failed to create intern: " + e.getMessage(), e);
+        }
+    }
+
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder();
+        int length = 12; // Adjustable length
+        for (int i = 0; i < length; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
+
+    @Transactional
+    public void createInternsBatch(List<InternRequest> requests, User hrUser) {
+        // Check for duplicates within the batch
+        Set<String> emailsInBatch = new HashSet<>();
+        List<String> duplicateEmails = new ArrayList<>();
+        for (InternRequest request : requests) {
+            if (!emailsInBatch.add(request.getEmail())) {
+                duplicateEmails.add(request.getEmail());
+            }
+        }
+        if (!duplicateEmails.isEmpty()) {
+            log.warn("Duplicate emails found in batch: {}", duplicateEmails);
+            throw new IllegalArgumentException("Duplicate emails in batch: " + String.join(", ", duplicateEmails));
+        }
+
+        // Check for existing emails in the database
+        List<String> existingEmails = internRepository.findByEmailIn(new ArrayList<>(emailsInBatch))
+                .stream()
+                .map(Intern::getEmail)
+                .collect(Collectors.toList());
+        if (!existingEmails.isEmpty()) {
+            log.warn("Existing emails found in database: {}", existingEmails);
+            throw new IllegalArgumentException("Interns with these emails already exist (Delete them and upload the file again): " + String.join(", ", existingEmails));
+        }
+
+        // Prepare lists
+        List<Intern> interns = new ArrayList<>();
+        List<User> users = new ArrayList<>();
+        List<String> passwords = new ArrayList<>();
+
+        for (InternRequest request : requests) {
+            String randomPassword = generateRandomPassword();
+            passwords.add(randomPassword);
+
+            User internUser = new User();
+            internUser.setEmail(request.getEmail());
+            internUser.setFirstName(request.getFirstName());
+            internUser.setLastName(request.getLastName());
+            internUser.setRole(User.Role.INTERN);
+            internUser.setPassword(randomPassword); // Set plain password
+            internUser.setCreatedAt(LocalDateTime.now());
+            internUser.setUpdatedAt(LocalDateTime.now());
+            users.add(internUser);
+
+            Intern intern = mapToEntity(request);
+            intern.setUser(hrUser); // Set the HR user
+            interns.add(intern);
+        }
+
+        try {
+            userRepository.saveAll(users);
+            internRepository.saveAll(interns);
+
+            // Send welcome emails to all interns
+            for (int i = 0; i < interns.size(); i++) {
+                Intern intern = interns.get(i);
+                InternRequest request = requests.get(i);
+                String subject = "Welcome to Your Internship at Aptiv!";
+                String body = buildWelcomeEmailBody(request, hrUser, passwords.get(i));
+                emailService.sendEmail(intern.getEmail(), subject, body);
+
+                // Create notification
+                notificationService.createNotification(
+                        subject,
+                        "Welcome to your internship! Please review your details and contact HR if needed.",
+                        Notification.NotificationType.WELCOME_MESSAGE,
+                        users.get(i),
+                        intern
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to save batch of interns or send welcome emails: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create intern batch: " + e.getMessage(), e);
         }
     }
 
@@ -135,6 +260,7 @@ public class InternService {
             throw new RuntimeException("Failed to retrieve interns by department: " + e.getMessage(), e);
         }
     }
+
     public List<Intern> findInternsByCriteria(String keyword, EntityManager entityManager) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Intern> cq = cb.createQuery(Intern.class);
@@ -186,44 +312,6 @@ public class InternService {
                     log.warn("Intern with email {} not found", user.getEmail());
                     return new ResourceNotFoundException("Intern", "email", user.getEmail());
                 }));
-    }
-
-    @Transactional
-    public void createInternsBatch(List<InternRequest> requests, User hrUser) {
-        // Check for duplicates within the batch
-        Set<String> emailsInBatch = new HashSet<>();
-        List<String> duplicateEmails = new ArrayList<>();
-        for (InternRequest request : requests) {
-            if (!emailsInBatch.add(request.getEmail())) {
-                duplicateEmails.add(request.getEmail());
-            }
-        }
-        if (!duplicateEmails.isEmpty()) {
-            log.warn("Duplicate emails found in batch: {}", duplicateEmails);
-            throw new IllegalArgumentException("Duplicate emails in batch: " + String.join(", ", duplicateEmails));
-        }
-
-        // Check for existing emails in the database
-        List<String> existingEmails = internRepository.findByEmailIn(new ArrayList<>(emailsInBatch))
-                .stream()
-                .map(Intern::getEmail)
-                .collect(Collectors.toList());
-        if (!existingEmails.isEmpty()) {
-            log.warn("Existing emails found in database: {}", existingEmails);
-            throw new IllegalArgumentException("Interns with these emails already exist (Delete them and upload the file again): " + String.join(", ", existingEmails));
-        }
-
-        // Save all interns
-        List<Intern> interns = requests.stream()
-                .map(this::mapToEntity)
-                .peek(i -> i.setUser(hrUser))
-                .collect(Collectors.toList());
-        try {
-            internRepository.saveAll(interns);
-        } catch (Exception e) {
-            log.error("Failed to save batch of interns: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create intern batch: " + e.getMessage(), e);
-        }
     }
 
     @Transactional
@@ -414,6 +502,47 @@ public class InternService {
                 .build();
     }
 
+    private String buildWelcomeEmailBody(InternRequest request, User hrUser, String randomPassword) {
+        return String.format("""
+            Dear %s %s,
+            
+            Congratulations on joining Aptiv as an intern! We are excited to have you on board.
+            
+            **Your Internship Details:**
+            - **Department:** %s
+            - **Supervisor:** %s
+            - **Start Date:** %s
+            - **End Date:** %s
+            - **University:** %s
+            - **Major:** %s
+            
+            **Your Login Credentials:**
+            - **Email:** %s
+            - **Password:** %s
+            
+            Please review your details and contact HR if there are any discrepancies.
+            
+            If you have any questions, feel free to reach out to %s %s at %s.
+            
+            ---
+            
+            Best regards,
+            %s %s
+            HR Department
+            Email: %s
+            
+            This is an automated message from the Internship Management System.
+            """,
+                request.getFirstName(), request.getLastName(),
+                request.getDepartment(), request.getSupervisor(),
+                request.getStartDate(), request.getEndDate(),
+                request.getUniversity(), request.getMajor(),
+                request.getEmail(), randomPassword,
+                hrUser.getFirstName(), hrUser.getLastName(), hrUser.getEmail(),
+                hrUser.getFirstName(), hrUser.getLastName(), hrUser.getEmail()
+        );
+    }
+
     InternResponse convertToResponse(Intern intern) {
         User user = intern.getUser();
         InternResponse response = new InternResponse();
@@ -477,8 +606,7 @@ public class InternService {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Failed to extract roles from security context: {}", e.getMessage(), e);
-            Throwable uyg = null;
-            throw new RuntimeException("Failed to extract user roles: " + e.getMessage(), uyg);
+            throw new RuntimeException("Failed to extract user roles: " + e.getMessage(), e);
         }
     }
 

@@ -52,6 +52,6 @@ public class Notification {
         ABSENCE_ALERT,
         DOCUMENT_UPLOADED,
         ACTIVITY_REMINDER,
-        MESSAGE_FROM_HR  // Add this new type
+        WELCOME_MESSAGE, MESSAGE_FROM_HR  // Add this new type
     }
 }
