@@ -18,7 +18,13 @@ const LoginPage = () => {
       const response = await axios.post('http://localhost:8080/api/auth/login', { email, password });
       const { token } = response.data;
       login(token);
-      router.push('/dashboard');
+      console.log('Login successful:', response.data);
+      if(response.data.user.role === 'HR') {
+        router.push('/dashboard');
+      }
+      else if(response.data.user.role === 'INTERN') {
+        router.push('/internSide');
+      }
     } catch (err) {
       setError('Invalid credentials');
     }

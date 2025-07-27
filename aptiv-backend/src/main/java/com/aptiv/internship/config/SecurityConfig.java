@@ -45,17 +45,24 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/test/public").permitAll()
                         .requestMatchers("/test/auth").authenticated()
+
+                        // PUT SPECIFIC RULES FIRST!
+                        .requestMatchers("/interns/my").hasRole("INTERN")  // Move this UP!
+                        .requestMatchers(HttpMethod.GET, "/activities/my").hasRole("INTERN")
+                        .requestMatchers(HttpMethod.GET, "/documents/my").hasRole("INTERN")
+
+                        // THEN GENERAL RULES
                         .requestMatchers(HttpMethod.GET, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns/batch").hasRole("HR")
                         .requestMatchers(HttpMethod.PUT, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.PATCH, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.DELETE, "/interns/**").hasRole("HR")
+
+                        // REST OF YOUR RULES...
                         .requestMatchers("/messages/send").hasRole("HR")
                         .requestMatchers("/reports/**").hasRole("HR")
-                        .requestMatchers(HttpMethod.GET, "/activities/my").hasRole("INTERN")
                         .requestMatchers(HttpMethod.POST, "/activities").hasRole("INTERN")
-                        .requestMatchers(HttpMethod.GET, "/documents/my").hasRole("INTERN")
                         .requestMatchers(HttpMethod.POST, "/documents").hasRole("INTERN")
                         .requestMatchers("/attendance/checkin").hasRole("INTERN")
                         .requestMatchers("/attendance/checkout").hasRole("INTERN")
@@ -64,8 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/profile").authenticated()
                         .anyRequest().authenticated()
                 )
-        // You can uncomment this line now that jwtAuthenticationFilter is properly stored
-         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
