@@ -39,4 +39,31 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Page<Message> findByInternUserIdOrderBySentAtDesc(@Param("userId") Long userId, Pageable pageable);
 
     Page<Message> findByInternIdOrderBySentAtDesc(Long id, Pageable pageable);
+
+    // Find all messages for HR (both sent and received)
+    @Query("SELECT m FROM Message m " +
+            "JOIN FETCH m.intern i " +
+            "JOIN FETCH m.sender s " +
+            "LEFT JOIN FETCH m.recipient r " +
+            "WHERE (m.sender.id = :hrUserId AND m.messageType = 'HR_TO_INTERN') " +
+            "OR (m.recipient.id = :hrUserId AND m.messageType = 'INTERN_TO_HR') " +
+            "ORDER BY m.sentAt DESC")
+    Page<Message> findAllMessagesForHR(@Param("hrUserId") Long hrUserId, Pageable pageable);
+
+    // Find conversation between intern and HR
+    @Query("SELECT m FROM Message m " +
+            "JOIN FETCH m.intern i " +
+            "JOIN FETCH m.sender s " +
+            "LEFT JOIN FETCH m.recipient r " +
+            "WHERE m.intern.id = :internId " +
+            "AND ((m.sender.id = :hrUserId AND m.messageType = 'HR_TO_INTERN') " +
+            "OR (m.recipient.id = :hrUserId AND m.messageType = 'INTERN_TO_HR')) " +
+            "ORDER BY m.sentAt DESC")
+    Page<Message> findConversationBetweenInternAndHR(@Param("internId") Long internId,
+                                                     @Param("hrUserId") Long hrUserId,
+                                                     Pageable pageable);
+
+    long countByRecipientIdAndIsReadFalseAndMessageType(Long recipientId, Message.MessageType messageType);
+
+    long countByInternIdAndIsReadFalseAndMessageType(Long id, Message.MessageType messageType);
 }

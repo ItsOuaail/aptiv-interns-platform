@@ -59,6 +59,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.DELETE, "/interns/**").hasRole("HR")
 
+                        // In your SecurityConfig
+                        .requestMatchers("/messages/to-hr").hasRole("INTERN")
+                        .requestMatchers("/messages/to-intern").hasRole("HR")
+                        .requestMatchers("/messages/my").authenticated()
+                        .requestMatchers("/messages/conversation").hasRole("HR")
+                        .requestMatchers("/messages/*/read").authenticated()
+                        .requestMatchers("/messages/unread/count").authenticated()
+                        .requestMatchers("/messages/hr-users").hasRole("INTERN")
+
                         // REST OF YOUR RULES...
                         .requestMatchers("/messages/send").hasRole("HR")
                         .requestMatchers("/reports/**").hasRole("HR")
