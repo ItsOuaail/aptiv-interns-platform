@@ -1,6 +1,8 @@
 package com.aptiv.internship.service;
 
 import java.security.SecureRandom;
+import com.aptiv.internship.repository.MessageRepository;
+import com.aptiv.internship.entity.Message;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -44,6 +46,7 @@ public class InternService {
     private final EmailService emailService;
     private final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
+    private final MessageRepository messageRepository;
 
     @Transactional
     public InternResponse createIntern(InternRequest request) {
@@ -394,7 +397,10 @@ public class InternService {
         String body = buildEmailBody(request.getContent(), hrUser, intern);
 
         try {
+            // 1. Send email
             emailService.sendEmail(intern.getEmail(), subject, body);
+
+            // 2. Create notification
             Notification notification = notificationService.createNotification(
                     request.getSubject(),
                     request.getContent(),
@@ -402,17 +408,34 @@ public class InternService {
                     intern.getUser(),
                     intern
             );
+
+            // 3. Save message to messages table
+            Message message = Message.builder()
+                    .subject(request.getSubject())
+                    .content(request.getContent())
+                    .intern(intern)
+                    .sender(hrUser)
+                    .isRead(false)
+                    .sentAt(LocalDateTime.now())
+                    .build();
+
+            Message savedMessage = messageRepository.save(message);
+
+            // 4. Build response
             MessageResponse resp = new MessageResponse();
-            resp.setId(notification.getId());
+            resp.setId(savedMessage.getId()); // Use message ID instead of notification ID
             resp.setSubject(request.getSubject());
             resp.setContent(request.getContent());
             resp.setIsRead(false);
-            resp.setSentAt(LocalDateTime.now());
+            resp.setSentAt(savedMessage.getSentAt());
             resp.setInternId(intern.getId());
             resp.setInternName(intern.getFirstName() + " " + intern.getLastName());
             resp.setSenderId(hrUser.getId());
             resp.setSenderName(hrUser.getFirstName() + " " + hrUser.getLastName());
+
+            log.info("Message sent successfully to intern {} by user {}", intern.getId(), hrUser.getId());
             return resp;
+
         } catch (Exception e) {
             log.error("Failed to send message to intern {}: {}", intern.getId(), e.getMessage(), e);
             throw new RuntimeException("Failed to send message to intern: " + e.getMessage(), e);

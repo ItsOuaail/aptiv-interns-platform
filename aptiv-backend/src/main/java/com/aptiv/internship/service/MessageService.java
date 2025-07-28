@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -40,16 +41,16 @@ public class MessageService {
         return convertToResponse(messageRepository.save(message));
     }
 
+    @Transactional(readOnly = true)
     public Page<MessageResponse> getMyMessages(Pageable pageable) {
-        User user = getCurrentUser();
-        if (user.getRole() == User.Role.INTERN) {
-            Intern intern = internRepository.findByEmail(user.getEmail())
-                    .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", user.getEmail()));
-            return messageRepository.findByIntern(intern, pageable)
-                    .map(this::convertToResponse);
-        } else {
-            return null;
-        }
+        User currentUser = getCurrentUser();
+        Intern intern = internRepository.findByEmail(currentUser.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", currentUser.getEmail()));
+
+        Page<Message> messages = messageRepository.findByInternIdOrderBySentAtDesc(intern.getId(), pageable);
+
+        // Convert within the transaction so lazy loading works
+        return messages.map(this::convertToResponse);
     }
 
     private User getCurrentUser() {

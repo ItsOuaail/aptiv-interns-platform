@@ -173,7 +173,7 @@
             try {
                 List<InternRequest> requests = excelParser.parseInterns(file);
                 internService.createInternsBatch(requests, user);
-                return ResponseEntity.ok(Map.of("success", true, "message", "Interns added successfully", "count", requests.size()));
+                            return ResponseEntity.ok(Map.of("success", true, "message", "Interns added successfully", "count", requests.size()));
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
             } catch (Exception e) {

@@ -89,6 +89,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Add your Next.js frontend URL explicitly
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",  // Next.js default port
+                "http://localhost:3001",  // Alternative port
+                "http://127.0.0.1:3000",
+                "https://yourdomain.com"  // Production URL
+        ));
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

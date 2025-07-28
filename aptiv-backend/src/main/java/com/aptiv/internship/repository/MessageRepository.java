@@ -37,4 +37,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT m FROM Message m WHERE m.intern.user.id = :userId ORDER BY m.sentAt DESC")
     Page<Message> findByInternUserIdOrderBySentAtDesc(@Param("userId") Long userId, Pageable pageable);
+
+    Page<Message> findByInternIdOrderBySentAtDesc(Long id, Pageable pageable);
 }
