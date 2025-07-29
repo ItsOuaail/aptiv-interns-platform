@@ -48,21 +48,23 @@ export const getNotifications = (page = 0, size = 20) => {
 
 // New functions for Intern Dashboard
 export const getInternDetails = () => {
-  return api.get('/auth/profile'); // Assuming '/interns/current' fetches the current intern's details
+  return api.get('/interns/my'); // Assuming '/interns/current' fetches the current intern's details
 };
 
 export const getMessagesFromHR = (page = 0, size = 20) => {
+  console.log('Fetching messages from HR', api.get('/messages/my', { params: { page, size } }));
   return api.get('/messages/my', { params: { page, size } });
 };
 
 export const sendMessageToHR = (data: { hrUserId: number; subject: string; content: string }) => {
-  return api.post('/api/messages/to-hr', data);
+  console.log('Sending message to HR', data);
+  return api.post('/messages/to-hr', data);
 };
 
 export const checkIn = () => {
-  return api.post('/api/attendance/checkin');
+  return api.post('/attendance/checkin');
 };
 
 export const checkOut = () => {
-  return api.post('/api/attendance/checkout');
+  return api.post('/attendance/checkout');
 };
