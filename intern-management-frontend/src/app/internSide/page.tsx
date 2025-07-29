@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
-import Navbar from '../../components/Navbar';
-import MessageForm from '../../components/MessageForm';
-
-// Mock services for intern-specific data (replace with actual API calls)
+import Navbar from '../../components/InternNavbar';
+import MessageFormIntern from '../../components/MessageFormIntern';
 import { getInternDetails, getMessagesFromHR, sendMessageToHR, checkIn, checkOut } from '../../services/internService';
 
 const InternDashboard = () => {
@@ -15,17 +13,20 @@ const InternDashboard = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch intern details
-  const { data: internDetails, isLoading: detailsLoading } = useQuery({
+  // Fetch intern details with error handling
+  const { data: internDetails, isLoading: detailsLoading, isError: detailsError, error: detailsErrorMessage } = useQuery({
     queryKey: ['internDetails'],
     queryFn: () => getInternDetails(token),
   });
 
-  // Fetch messages from HR
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  // Fetch messages from HR with error handling
+  const { data: messagesResponse, isLoading: messagesLoading, isError: messagesError, error: messagesErrorMessage } = useQuery({
     queryKey: ['messagesFromHR'],
-    queryFn: () => getMessagesFromHR(token),
+    queryFn: () => getMessagesFromHR(),
   });
+
+  // Extract messages content safely
+  const messages = messagesResponse?.content || [];
 
   // Mutation for sending message to HR
   const sendMessageMutation = useMutation({
@@ -79,6 +80,28 @@ const InternDashboard = () => {
     );
   }
 
+  if (detailsError) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="text-center mt-8 text-red-500">
+          Error loading intern details: {detailsErrorMessage?.message || 'Unknown error'}
+        </div>
+      </div>
+    );
+  }
+
+  if (messagesError) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="text-center mt-8 text-red-500">
+          Error loading messages: {messagesErrorMessage?.message || 'Unknown error'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -111,7 +134,7 @@ const InternDashboard = () => {
 
         <div className="mt-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Send Message to HR</h2>
-          <MessageForm onSubmit={sendMessageMutation.mutate} allowFileUpload />
+          <MessageFormIntern onSubmit={sendMessageMutation.mutate} allowFileUpload />
         </div>
 
         <div className="mt-12">
@@ -138,13 +161,17 @@ const InternshipInfo = ({ details }) => (
 // Component for displaying messages from HR
 const MessagesList = ({ messages }) => (
   <div className="space-y-4">
-    {messages.map((message) => (
-      <div key={message.id} className="bg-white p-4 rounded-lg shadow">
-        <h4 className="font-semibold">{message.subject}</h4>
-        <p className="text-gray-600">{message.date}</p>
-        <p>{message.body}</p>
-      </div>
-    ))}
+    {messages.length > 0 ? (
+      messages.map((message) => (
+        <div key={message.id} className="bg-white p-4 rounded-lg shadow">
+          <h4 className="font-semibold">{message.subject}</h4>
+          <p className="text-gray-600">{message.sentAt}</p>
+          <p>{message.content}</p>
+        </div>
+      ))
+    ) : (
+      <p>No messages available.</p>
+    )}
   </div>
 );
 
