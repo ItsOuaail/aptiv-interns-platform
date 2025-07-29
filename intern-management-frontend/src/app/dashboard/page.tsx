@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport, getNotifications } from '../../services/internService';
+import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport, getMessagesFromHR } from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
@@ -29,15 +29,15 @@ const DashboardPage = () => {
   // Fetch notifications
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => getNotifications(0, 20),
+    queryFn: () => getMessagesFromHR(),
   });
 
   // Filter for INTERNSHIP_ENDING notifications
   const internshipEndingNotifications = useMemo(() => {
-    return notificationsData?.data.content?.filter(
-      notif => notif.type === 'INTERNSHIP_ENDING'
-    ) || [];
-  }, [notificationsData]);
+  return notificationsData?.data.content?.filter(
+    notif => notif.messageType === 'INTERNSHIP_ENDING' || notif.messageType === 'INTERN_TO_HR'
+  ) || [];
+}, [notificationsData]);
 
   // Sync viewMode with URL query parameter
   useEffect(() => {

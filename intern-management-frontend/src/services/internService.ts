@@ -43,7 +43,7 @@ export const batchImport = (formData: FormData) =>
 
 // New function to fetch notifications
 export const getNotifications = (page = 0, size = 20) => {
-  return api.get('/notifications', { params: { page, size } });
+  return api.get('/messages/my', { params: { page, size } });
 };
 
 // New functions for Intern Dashboard
@@ -52,7 +52,6 @@ export const getInternDetails = () => {
 };
 
 export const getMessagesFromHR = (page = 0, size = 20) => {
-  console.log('Fetching messages from HR', api.get('/messages/my', { params: { page, size } }));
   return api.get('/messages/my', { params: { page, size } });
 };
 

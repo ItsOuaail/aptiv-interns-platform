@@ -62,13 +62,13 @@ const Navbar = ({ notifications = [] }) => {
                   {notifications.length > 0 ? (
                     notifications.map(notif => (
                       <div key={notif.id} className="px-4 py-2 text-sm hover:bg-gray-700">
-                        <p><strong>{notif.title}</strong></p>
-                        <p>{notif.message}</p>
+                        <p><strong>{notif.subject}</strong></p>
+                        <p>{notif.content}</p>
                         <p className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</p>
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-2 text-sm">No internship ending notifications</div>
+                    <div className="px-4 py-2 text-sm">No internship notifications</div>
                   )}
                 </div>
               )}

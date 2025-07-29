@@ -37,7 +37,7 @@ public class MessageController {
      * Intern sends message to HR
      */
     @PostMapping("/to-hr")
-    @PreAuthorize("hasRole('INTERN')")
+    @PreAuthorize("hasRole('INTERN') or hasRole('HR')")
     public ResponseEntity<MessageResponse> sendMessageToHR(@Valid @RequestBody InternMessageRequest request) {
         return ResponseEntity.ok(messageService.sendMessageToHR(request));
     }
