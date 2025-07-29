@@ -52,10 +52,10 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    /*public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDetails.getUsername());
-    }
+    }*/
 
     public String generateToken(UserDetails userDetails, String role) {
         Map<String, Object> claims = new HashMap<>();

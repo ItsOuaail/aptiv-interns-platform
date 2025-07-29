@@ -30,7 +30,7 @@ public class AuthController {
         );
 
         User user = (User) authentication.getPrincipal(); // your custom User entity
-        String token = jwtUtil.generateToken(user);
+        String token = jwtUtil.generateToken(user, user.getRole().name());
 
         UserDTO userDTO = new UserDTO(
                 user.getId(),

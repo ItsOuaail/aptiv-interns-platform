@@ -21,7 +21,7 @@ public class DemoApplication {
 		return args -> {
 			// Create a default HR user if it doesn't exist
 			User hrUser = userService.createUserIfNotExists(
-					"ouaail@example.com",
+					"ouaailelaouad@gmail.com",
 					"ouaail",
 					"elaouad",
 					"adminpass",// Plain text password to be hashed

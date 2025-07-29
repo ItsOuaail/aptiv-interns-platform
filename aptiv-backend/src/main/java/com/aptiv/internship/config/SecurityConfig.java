@@ -45,17 +45,33 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/test/public").permitAll()
                         .requestMatchers("/test/auth").authenticated()
+
+                        // PUT SPECIFIC RULES FIRST!
+                        .requestMatchers("/interns/my").hasRole("INTERN")  // Move this UP!
+                        .requestMatchers(HttpMethod.GET, "/activities/my").hasRole("INTERN")
+                        .requestMatchers(HttpMethod.GET, "/documents/my").hasRole("INTERN")
+
+                        // THEN GENERAL RULES
                         .requestMatchers(HttpMethod.GET, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns").hasRole("HR")
                         .requestMatchers(HttpMethod.POST, "/interns/batch").hasRole("HR")
                         .requestMatchers(HttpMethod.PUT, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.PATCH, "/interns/**").hasRole("HR")
                         .requestMatchers(HttpMethod.DELETE, "/interns/**").hasRole("HR")
+
+                        // In your SecurityConfig
+                        .requestMatchers("/messages/to-hr").hasRole("INTERN")
+                        .requestMatchers("/messages/to-intern").hasRole("HR")
+                        .requestMatchers("/messages/my").authenticated()
+                        .requestMatchers("/messages/conversation").hasRole("HR")
+                        .requestMatchers("/messages/*/read").authenticated()
+                        .requestMatchers("/messages/unread/count").authenticated()
+                        .requestMatchers("/messages/hr-users").hasRole("INTERN")
+
+                        // REST OF YOUR RULES...
                         .requestMatchers("/messages/send").hasRole("HR")
                         .requestMatchers("/reports/**").hasRole("HR")
-                        .requestMatchers(HttpMethod.GET, "/activities/my").hasRole("INTERN")
                         .requestMatchers(HttpMethod.POST, "/activities").hasRole("INTERN")
-                        .requestMatchers(HttpMethod.GET, "/documents/my").hasRole("INTERN")
                         .requestMatchers(HttpMethod.POST, "/documents").hasRole("INTERN")
                         .requestMatchers("/attendance/checkin").hasRole("INTERN")
                         .requestMatchers("/attendance/checkout").hasRole("INTERN")
@@ -64,8 +80,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/profile").authenticated()
                         .anyRequest().authenticated()
                 )
-        // You can uncomment this line now that jwtAuthenticationFilter is properly stored
-         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -83,6 +98,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Add your Next.js frontend URL explicitly
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",  // Next.js default port
+                "http://localhost:3001",  // Alternative port
+                "http://127.0.0.1:3000",
+                "https://yourdomain.com"  // Production URL
+        ));
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
