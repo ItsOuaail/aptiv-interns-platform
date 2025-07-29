@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 
@@ -26,16 +26,28 @@ const Navbar = ({ notifications = [] }) => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/dashboard?view=all" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+            <Link
+              href="/dashboard?view=all"
+              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+            >
               ARCHIVE
             </Link>
-            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+            <a
+              href="#"
+              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+            >
               SOLUTIONS
             </a>
-            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+            <a
+              href="#"
+              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+            >
               CAREERS
             </a>
-            <a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+            <a
+              href="#"
+              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+            >
               ABOUT
             </a>
           </div>
@@ -48,8 +60,18 @@ const Navbar = ({ notifications = [] }) => {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="p-2 text-gray-300 hover:text-white transition-colors duration-200 relative"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
                 </svg>
                 {notifications.length > 0 && (
                   <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
@@ -57,18 +79,31 @@ const Navbar = ({ notifications = [] }) => {
                   </span>
                 )}
               </button>
+
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-md shadow-lg py-1 z-10 text-gray-200">
                   {notifications.length > 0 ? (
                     notifications.map(notif => (
-                      <div key={notif.id} className="px-4 py-2 text-sm hover:bg-gray-700">
-                        <p><strong>{notif.subject}</strong></p>
+                      <div
+                        key={notif.id}
+                        className="px-4 py-2 text-sm hover:bg-gray-700"
+                      >
+                        <p>
+                          <strong>{notif.subject}</strong>
+                        </p>
+                        <p className="text-sm text-gray-400 italic">
+                          From: {notif.senderName}
+                        </p>
                         <p>{notif.content}</p>
-                        <p className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(notif.sentAt).toLocaleString()}
+                        </p>
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-2 text-sm">No internship notifications</div>
+                    <div className="px-4 py-2 text-sm">
+                      No internship notifications
+                    </div>
                   )}
                 </div>
               )}
@@ -79,8 +114,17 @@ const Navbar = ({ notifications = [] }) => {
               onClick={logout}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-transparent hover:bg-gray-800 transition-all duration-200 border border-gray-600 hover:border-gray-400"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span>Logout</span>
             </button>
@@ -89,27 +133,49 @@ const Navbar = ({ notifications = [] }) => {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
             <button className="text-gray-300 hover:text-white p-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu (hidden by default) */}
+      {/* Mobile Navigation Menu */}
       <div className="md:hidden bg-gray-900 border-t border-gray-800">
         <div className="px-2 pt-2 pb-3 space-y-1">
-          <Link href="/dashboard?view=all" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+          <Link
+            href="/dashboard?view=all"
+            className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
+          >
             ARCHIVE
           </Link>
-          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+          <a
+            href="#"
+            className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
+          >
             SOLUTIONS
           </a>
-          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+          <a
+            href="#"
+            className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
+          >
             CAREERS
           </a>
-          <a href="#" className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide">
+          <a
+            href="#"
+            className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
+          >
             ABOUT
           </a>
         </div>
