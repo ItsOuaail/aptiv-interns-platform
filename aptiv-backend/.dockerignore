@@ -1,0 +1,14 @@
+target/
+*.log
+*.tmp
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+.env
+.env.local
+*.iml
+.idea/
+.vscode/
+.DS_Store

@@ -22,9 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            {children} {/* This renders the page content */}
+            {children}
           </AuthProvider>
-          {/* Optional: React Query DevTools for development */}
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </body>
