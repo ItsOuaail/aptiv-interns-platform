@@ -41,9 +41,41 @@ export const sendBulkMessage = (data: { internIds: number[]; subject: string; co
 export const batchImport = (formData: FormData) =>
   api.post('/interns/batch', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
-// New function to fetch notifications
+// Message-related functions
 export const getNotifications = (page = 0, size = 20) => {
   return api.get('/messages/my', { params: { page, size } });
+};
+
+// Get a single message by ID
+export const getMessage = (messageId: number) => {
+  return api.get(`/messages/${messageId}`);
+};
+
+// Delete a message by ID
+export const deleteMessage = (messageId: number) => {
+  return api.delete(`/messages/${messageId}`);
+};
+
+// Mark message as read
+export const markMessageAsRead = (messageId: number) => {
+  return api.patch(`/messages/${messageId}/read`);
+};
+
+// Get unread message count
+export const getUnreadMessageCount = () => {
+  return api.get('/messages/unread/count');
+};
+
+// Get HR users (for interns to choose who to send message to)
+export const getHRUsers = (page = 0, size = 20) => {
+  return api.get('/messages/hr-users', { params: { page, size } });
+};
+
+// Get conversation between intern and HR (HR only)
+export const getConversation = (internId: number, hrUserId: number, page = 0, size = 20) => {
+  return api.get('/messages/conversation', { 
+    params: { internId, hrUserId, page, size } 
+  });
 };
 
 // New functions for Intern Dashboard
@@ -58,6 +90,12 @@ export const getMessagesFromHR = (page = 0, size = 20) => {
 export const sendMessageToHR = (data: { hrUserId: number; subject: string; content: string }) => {
   console.log('Sending message to HR', data);
   return api.post('/messages/to-hr', data);
+};
+
+// HR sends message to intern
+export const sendMessageToIntern = (data: { internId: number; subject: string; content: string }) => {
+  console.log('Sending message to intern', data);
+  return api.post('/messages/to-intern', data);
 };
 
 export const checkIn = () => {
