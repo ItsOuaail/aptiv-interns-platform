@@ -3,7 +3,7 @@ import {
   getMessage, 
   deleteMessage, 
   markMessageAsRead, 
-  getNotifications,
+  getMessagesFromHR,
   getUnreadMessageCount 
 } from '../services/internService';
 
@@ -33,7 +33,7 @@ export const useMessages = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getNotifications(page, size);
+      const response = await getMessagesFromHR(page, size);
       setMessages(response.data.content || []);
       return response.data;
     } catch (err: any) {
