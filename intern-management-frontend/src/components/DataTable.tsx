@@ -26,7 +26,7 @@ const DataTable = ({ interns, onEdit, onDelete, onSendMessage, selectedInternIds
   }
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden" id='table'>
       {/* Desktop Table View */}
       <div className="hidden xl:block">
         <div className="overflow-x-auto">

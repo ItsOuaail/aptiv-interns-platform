@@ -42,7 +42,7 @@ const Navbar = ({ notifications = [] }) => {
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               <Link
-                href="/dashboard?view=all"
+                href="/dashboard?view=all#table"
                 className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
               >
                 ARCHIVE
@@ -177,7 +177,7 @@ const Navbar = ({ notifications = [] }) => {
         <div className="md:hidden bg-gray-900 border-t border-gray-800">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link
-              href="/dashboard?view=all"
+              href="/dashboard?view=all#table"
               className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
             >
               ARCHIVE
