@@ -164,6 +164,68 @@ public class MessageService {
     }
 
     /**
+     * Get a single message by ID (works for both HR and INTERN)
+     */
+    @Transactional(readOnly = true)
+    public MessageResponse getMessage(Long messageId) {
+        User currentUser = getCurrentUser();
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Message", "id", messageId));
+
+        // Verify user has permission to view this message
+        boolean canViewMessage = false;
+
+        if (currentUser.getRole().equals(User.Role.HR)) {
+            // HR can view messages they sent or received
+            canViewMessage = message.getSender().getId().equals(currentUser.getId()) ||
+                    (message.getRecipient() != null && message.getRecipient().getId().equals(currentUser.getId()));
+        } else {
+            // Intern can view messages they are involved in
+            Intern intern = internRepository.findByEmail(currentUser.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", currentUser.getEmail()));
+            canViewMessage = message.getIntern().getId().equals(intern.getId());
+        }
+
+        if (!canViewMessage) {
+            throw new IllegalArgumentException("You don't have permission to view this message");
+        }
+
+        log.info("Message {} retrieved by user {}", messageId, currentUser.getId());
+        return convertToResponse(message);
+    }
+
+    /**
+     * Delete a message (works for both HR and INTERN)
+     */
+    @Transactional
+    public void deleteMessage(Long messageId) {
+        User currentUser = getCurrentUser();
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Message", "id", messageId));
+
+        // Verify user has permission to delete this message
+        boolean canDeleteMessage = false;
+
+        if (currentUser.getRole().equals(User.Role.HR)) {
+            // HR can delete messages they sent or received
+            canDeleteMessage = message.getSender().getId().equals(currentUser.getId()) ||
+                    (message.getRecipient() != null && message.getRecipient().getId().equals(currentUser.getId()));
+        } else {
+            // Intern can delete messages they are involved in
+            Intern intern = internRepository.findByEmail(currentUser.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("Intern", "email", currentUser.getEmail()));
+            canDeleteMessage = message.getIntern().getId().equals(intern.getId());
+        }
+
+        if (!canDeleteMessage) {
+            throw new IllegalArgumentException("You don't have permission to delete this message");
+        }
+
+        messageRepository.delete(message);
+        log.info("Message {} deleted by user {}", messageId, currentUser.getId());
+    }
+
+    /**
      * Get conversation between intern and HR
      */
     @Transactional(readOnly = true)

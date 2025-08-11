@@ -52,6 +52,15 @@ public class MessageController {
     }
 
     /**
+     * Get a single message by ID (works for both HR and INTERN)
+     */
+    @GetMapping("/{messageId}")
+    @PreAuthorize("hasRole('HR') or hasRole('INTERN')")
+    public ResponseEntity<MessageResponse> getMessage(@PathVariable Long messageId) {
+        return ResponseEntity.ok(messageService.getMessage(messageId));
+    }
+
+    /**
      * Get conversation between intern and HR
      */
     @GetMapping("/conversation")
@@ -69,6 +78,16 @@ public class MessageController {
     @PatchMapping("/{messageId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long messageId) {
         messageService.markAsRead(messageId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Delete a message (works for both HR and INTERN)
+     */
+    @DeleteMapping("/{messageId}")
+    @PreAuthorize("hasRole('HR') or hasRole('INTERN')")
+    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
+        messageService.deleteMessage(messageId);
         return ResponseEntity.ok().build();
     }
 
