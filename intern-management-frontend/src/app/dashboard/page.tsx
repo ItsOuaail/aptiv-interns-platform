@@ -7,8 +7,9 @@ import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllI
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
-import FileDropzone from '../../components/FileDropzone';
 import MessageForm from '../../components/MessageForm';
+import HeroSection from '../../components/HeroSection';
+import SearchFilters from '../../components/SearchFilters';
 
 const DashboardPage = () => {
   const token = useRequireAuth();
@@ -39,6 +40,25 @@ const DashboardPage = () => {
   ) || [];
 }, [notificationsData]);
 
+  // Add this to your DashboardPage useEffect for handling success messages
+useEffect(() => {
+  const success = searchParams.get('success');
+  if (success === 'created') {
+    setSuccessMessage('Intern added successfully!');
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+      router.replace('/dashboard', undefined, { shallow: true });
+    }, 5000);
+    return () => clearTimeout(timer);
+  } else if (success === 'updated') {
+    setSuccessMessage('Intern updated successfully!');
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+      router.replace('/dashboard', undefined, { shallow: true });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }
+}, [searchParams, router]);
   // Sync viewMode with URL query parameter
   useEffect(() => {
     const view = searchParams.get('view');
@@ -244,100 +264,19 @@ const DashboardPage = () => {
     }
   };
 
-  const handleCreate = () => router.push('/interns/new');
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar notifications={internshipEndingNotifications} />
       
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Intern Management
-              <span className="text-orange-500 ml-2">Dashboard</span>
-            </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Streamline your internship program with advanced analytics and seamless management tools
-            </p>
-          </div>
-
-          {successMessage && (
-            <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
-              {successMessage}
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="mb-8 p-4 bg-red-500/20 border border-red-500 rounded-2xl text-center text-red-500 font-medium animate-fade-in">
-              {errorMessage}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'all' ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('all');
-                router.push('/dashboard?view=all#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Total Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{totalInterns?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'active' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('active');
-                router.push('/dashboard?view=active#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Active Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{activeInterns?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'upcoming' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('upcoming');
-                router.push('/dashboard?view=upcoming#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
-                  <p className="text-4xl font-bold text-white mt-2">{upcomingEndDates?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HeroSection 
+        totalInterns={totalInterns}
+        activeInterns={activeInterns}
+        upcomingEndDates={upcomingEndDates}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        successMessage={successMessage}
+        errorMessage={errorMessage}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {selectedInternIds.length > 0 && (
@@ -352,72 +291,12 @@ const DashboardPage = () => {
           </div>
         )}
 
-        <div className="relative bg-gray-950 shadow-xl border border-orange-500/50 rounded-2xl p-8 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
-          <div className="relative">
-            <h2 className="text-2xl font-semibold text-white mb-6">Search & Filters</h2>
-            
-            <div className="space-y-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search interns by name, university, or department..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">University</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by university"
-                    onChange={(e) => handleFilterChange('university', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">Start Date</label>
-                  <input
-                    type="date"
-                    onChange={(e) => handleFilterChange('startDateFrom', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">Department</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by department"
-                    onChange={(e) => handleFilterChange('department', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleCreate}
-                  className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-                <div className="flex-1">
-                  <FileDropzone onDrop={handleFileDrop} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SearchFilters 
+          search={search}
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+          onFileDrop={handleFileDrop}
+        />
 
         <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
           <div className="flex items-center justify-between mb-6">
