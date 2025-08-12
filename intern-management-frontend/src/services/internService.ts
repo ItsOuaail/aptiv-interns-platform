@@ -119,3 +119,6 @@ export const getMyDocuments = (page = 0, size = 20) =>
 // download helper (returns a URL you can open)
 export const downloadDocument = (id: number) =>
   api.get(`/documents/${id}/download`, { responseType: 'blob' });
+
+export const getAllDocuments = (page = 0, size = 20) =>
+  api.get('/documents', { params: { page, size } });

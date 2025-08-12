@@ -59,6 +59,9 @@ const Navbar = ({ notifications = [] }) => {
               >
                 MESSAGES
               </Link>
+              <Link href="/dashboard?view=docs" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+                  DOCUMENTS
+              </Link>
             </div>
 
             {/* Right Side Actions */}
@@ -187,6 +190,9 @@ const Navbar = ({ notifications = [] }) => {
               className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
             >
               MESSAGES
+            </Link>
+            <Link href="/dashboard?view=docs" className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide">
+              DOCUMENTS
             </Link>
           </div>
         </div>
