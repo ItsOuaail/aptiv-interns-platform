@@ -40,6 +40,13 @@ const InternNavbar = ({ setActiveSection, notifications = [] }) => {
             >
               DASHBOARD
             </button>
+            <button
+              onClick={() => setActiveSection('documents')}
+              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+            >
+              DOCUMENTS
+            </button>
+
           </div>
 
           <div className="flex items-center space-x-4">
@@ -112,6 +119,13 @@ const InternNavbar = ({ setActiveSection, notifications = [] }) => {
           >
             DASHBOARD
           </button>
+          <button
+  onClick={() => setActiveSection('documents')}
+  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
+>
+  DOCUMENTS
+</button>
+
         </div>
       </div>
     </nav>

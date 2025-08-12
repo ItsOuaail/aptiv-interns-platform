@@ -59,13 +59,6 @@ const Navbar = ({ notifications = [] }) => {
               >
                 MESSAGES
               </Link>
-              
-              <a
-                href="#"
-                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium tracking-wide"
-              >
-                ABOUT
-              </a>
             </div>
 
             {/* Right Side Actions */}
@@ -195,13 +188,6 @@ const Navbar = ({ notifications = [] }) => {
             >
               MESSAGES
             </Link>
-            
-            <a
-              href="#"
-              className="block px-3 py-2 text-gray-300 hover:text-white font-medium tracking-wide"
-            >
-              ABOUT
-            </a>
           </div>
         </div>
       </nav>
