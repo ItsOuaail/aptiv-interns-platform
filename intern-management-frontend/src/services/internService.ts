@@ -105,3 +105,20 @@ export const checkIn = () => {
 export const checkOut = () => {
   return api.post('/attendance/checkout');
 };
+
+// upload a document (multipart/form-data)
+export const uploadDocument = (formData: FormData) =>
+  api.post('/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+// get current intern's documents (pageable)
+export const getMyDocuments = (page = 0, size = 20) =>
+  api.get('/documents/my', { params: { page, size } });
+
+// download helper (returns a URL you can open)
+export const downloadDocument = (id: number) =>
+  api.get(`/documents/${id}/download`, { responseType: 'blob' });
+
+export const getAllDocuments = (page = 0, size = 20) =>
+  api.get('/documents', { params: { page, size } });
