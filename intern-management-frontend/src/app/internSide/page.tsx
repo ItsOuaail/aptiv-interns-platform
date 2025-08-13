@@ -1,47 +1,62 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/InternNavbar';
 import MessageFormIntern from '../../components/MessageFormIntern';
+import InternDocuments from '../../components/InternDocuments';
 import { getInternDetails, getMessagesFromHR, sendMessageToHR } from '../../services/internService';
 
-const InternDashboard = () => {
+const InternDashboard: React.FC = () => {
   const token = useRequireAuth();
-  const [activeSection, setActiveSection] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: internDetails, isLoading: detailsLoading, isError: detailsError, error: detailsErrorMessage } = useQuery({
+  const {
+    data: internDetails,
+    isLoading: detailsLoading,
+    isError: detailsError,
+    error: detailsErrorMessage,
+  } = useQuery({
     queryKey: ['internDetails'],
     queryFn: () => getInternDetails(),
+    staleTime: 1000 * 60 * 2, // 2 mins
   });
 
-  const { data: messagesResponse, isLoading: messagesLoading, isError: messagesError, error: messagesErrorMessage } = useQuery({
+  const {
+    data: messagesResponse,
+    isLoading: messagesLoading,
+    isError: messagesError,
+    error: messagesErrorMessage,
+  } = useQuery({
     queryKey: ['messagesFromHR'],
     queryFn: () => getMessagesFromHR(),
+    staleTime: 1000 * 30,
   });
 
   // Filter messages to only show HR_TO_INTERN messages and sort by date (newest first)
   const messages = useMemo(() => {
     if (!messagesResponse?.data?.content) return [];
-    
+
     return messagesResponse.data.content
-      .filter(message => message.messageType === 'HR_TO_INTERN')
-      .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt)); // Sort newest first
+      .filter((message: any) => message.messageType === 'HR_TO_INTERN')
+      .sort((a: any, b: any) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
   }, [messagesResponse]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: (messageData) => sendMessageToHR(messageData),
+    mutationFn: (messageData: { hrUserId?: number; subject: string; content: string }) =>
+      sendMessageToHR(messageData as any),
     onSuccess: () => {
       setSuccessMessage('Message sent successfully!');
       setTimeout(() => setSuccessMessage(null), 5000);
       queryClient.invalidateQueries(['messagesFromHR']);
     },
-    onError: (error) => {
-      setErrorMessage(error.message || 'Failed to send message. Please try again.');
+    onError: (error: any) => {
+      setErrorMessage(error?.message || 'Failed to send message. Please try again.');
+      setTimeout(() => setErrorMessage(null), 5000);
     },
   });
 
@@ -73,7 +88,7 @@ const InternDashboard = () => {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Dashboard</h3>
-            <p className="text-red-300">{detailsErrorMessage?.message || 'Unknown error occurred'}</p>
+            <p className="text-red-300">{(detailsErrorMessage as any)?.message || 'Unknown error occurred'}</p>
           </div>
         </div>
       </div>
@@ -92,7 +107,7 @@ const InternDashboard = () => {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Messages</h3>
-            <p className="text-red-300">{messagesErrorMessage?.message || 'Unknown error occurred'}</p>
+            <p className="text-red-300">{(messagesErrorMessage as any)?.message || 'Unknown error occurred'}</p>
           </div>
         </div>
       </div>
@@ -102,7 +117,7 @@ const InternDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       <Navbar setActiveSection={setActiveSection} />
-      
+
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -139,8 +154,8 @@ const InternDashboard = () => {
           )}
 
           {/* Navigation Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div 
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            <div
               className={`bg-gray-950/80 backdrop-blur-sm border ${activeSection === null ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer transform hover:scale-105`}
               onClick={() => setActiveSection(null)}
             >
@@ -157,7 +172,24 @@ const InternDashboard = () => {
               </div>
             </div>
 
-            <div 
+            <div
+              className={`bg-gray-950/80 backdrop-blur-sm border ${activeSection === 'documents' ? 'border-purple-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer transform hover:scale-105`}
+              onClick={() => setActiveSection('documents')}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Documents</p>
+                  <p className="text-lg font-semibold text-white mt-2">My uploads</p>
+                </div>
+                <div className="w-14 h-14 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 11h10M7 15h6M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div
               className={`bg-gray-950/80 backdrop-blur-sm border ${activeSection === 'messages' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer transform hover:scale-105`}
               onClick={() => setActiveSection('messages')}
             >
@@ -179,7 +211,7 @@ const InternDashboard = () => {
               </div>
             </div>
 
-            <div 
+            <div
               className={`bg-gray-950/80 backdrop-blur-sm border ${activeSection === 'sendMessage' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer transform hover:scale-105`}
               onClick={() => setActiveSection('sendMessage')}
             >
@@ -214,21 +246,28 @@ const InternDashboard = () => {
           </div>
         )}
 
+        {activeSection === 'documents' && (
+          <div className="bg-gray-950/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold text-white mb-6">My Documents</h2>
+            <InternDocuments />
+          </div>
+        )}
+
         {activeSection === 'messages' && (
           <div className="bg-gray-950/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">Messages from HR</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
                 </div>
-                <div className="text-sm text-gray-300">
-                  {messages.length} HR message{messages.length !== 1 ? 's' : ''}
-                </div>
+                <h2 className="text-2xl font-bold text-white">Messages from HR</h2>
               </div>
+              <div className="text-sm text-gray-300">
+                {messages.length} HR message{messages.length !== 1 ? 's' : ''}
+              </div>
+            </div>
             <MessagesList messages={messages} />
           </div>
         )}
@@ -243,7 +282,7 @@ const InternDashboard = () => {
               </div>
               <h2 className="text-2xl font-bold text-white">Send Message to HR</h2>
             </div>
-            <MessageFormIntern onSubmit={sendMessageMutation.mutate} allowFileUpload />
+            <MessageFormIntern onSubmit={(data: any) => sendMessageMutation.mutate(data)} allowFileUpload />
           </div>
         )}
       </div>
@@ -251,134 +290,84 @@ const InternDashboard = () => {
   );
 };
 
+/* ---------- Helper subcomponents (kept inline for single-file) ---------- */
 
-const InternshipInfo = ({ details }) => (
-  <div className="relative">
-    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
-    <div className="relative bg-gray-900/50 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
-      <div className="flex items-center space-x-4 mb-6">
-        <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-blue-500 rounded-2xl flex items-center justify-center">
-          <span className="text-white text-xl font-bold">
-            {details.data.firstName?.[0]}{details.data.lastName?.[0]}
-          </span>
-        </div>
-        <div>
-          <h3 className="text-2xl font-bold text-white">
-            {details.data.firstName} {details.data.lastName}
-          </h3>
-          <div className="flex items-center space-x-2 mt-1">
-            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-              details.data.status === 'ACTIVE' 
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-            }`}>
-              {details.data.status}
+const InternshipInfo: React.FC<{ details: any }> = ({ details }) => {
+  const d = details?.data ?? {};
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
+      <div className="relative bg-gray-900/50 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-blue-500 rounded-2xl flex items-center justify-center">
+            <span className="text-white text-xl font-bold">
+              {d.firstName?.[0] ?? ''}{d.lastName?.[0] ?? ''}
             </span>
           </div>
-        </div>
-      </div>
-      
-      {/* Contact Information Section */}
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-          <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span>Contact Information</span>
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Email</span>
+          <div>
+            <h3 className="text-2xl font-bold text-white">
+              {d.firstName} {d.lastName}
+            </h3>
+            <div className="flex items-center space-x-2 mt-1">
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                d.status === 'ACTIVE'
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+              }`}>
+                {d.status}
+              </span>
             </div>
-            <p className="text-white font-semibold break-all">{details.data.email}</p>
-          </div>
-          
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Phone</span>
-            </div>
-            <p className="text-white font-semibold">{details.data.phone}</p>
           </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">University</span>
+
+        {/* Contact + details */}
+        <div className="mb-6">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span>Contact Information</span>
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
+              <p className="text-sm font-medium text-gray-300 uppercase tracking-wide mb-2">Email</p>
+              <p className="text-white font-semibold break-all">{d.email}</p>
             </div>
-            <p className="text-white font-semibold">{details.data.university}</p>
-          </div>
-          
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Department</span>
+            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
+              <p className="text-sm font-medium text-gray-300 uppercase tracking-wide mb-2">Phone</p>
+              <p className="text-white font-semibold">{d.phone}</p>
             </div>
-            <p className="text-white font-semibold">{details.data.department}</p>
-          </div>
-          
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Major</span>
-            </div>
-            <p className="text-white font-semibold">{details.data.major}</p>
           </div>
         </div>
-        
-        <div className="space-y-4">
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7h8M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Start Date</span>
-            </div>
-            <p className="text-white font-semibold">{new Date(details.data.startDate).toLocaleDateString()}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <InfoCard title="University" value={d.university} />
+            <InfoCard title="Department" value={d.department} />
+            <InfoCard title="Major" value={d.major} />
           </div>
-          
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">End Date</span>
-            </div>
-            <p className="text-white font-semibold">{new Date(details.data.endDate).toLocaleDateString()}</p>
-          </div>
-          
-          <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
-            <div className="flex items-center space-x-3 mb-2">
-              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">Supervisor</span>
-            </div>
-            <p className="text-white font-semibold">{details.data.supervisor}</p>
+
+          <div className="space-y-4">
+            <InfoCard title="Start Date" value={d.startDate ? new Date(d.startDate).toLocaleDateString() : ''} />
+            <InfoCard title="End Date" value={d.endDate ? new Date(d.endDate).toLocaleDateString() : ''} />
+            <InfoCard title="Supervisor" value={d.supervisor} />
           </div>
         </div>
       </div>
     </div>
+  );
+};
+
+const InfoCard: React.FC<{ title: string; value?: any }> = ({ title, value }) => (
+  <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-600">
+    <div className="flex items-center space-x-3 mb-2">
+      <span className="text-sm font-medium text-gray-300 uppercase tracking-wide">{title}</span>
+    </div>
+    <p className="text-white font-semibold">{value ?? '-'}</p>
   </div>
 );
 
-const MessagesList = ({ messages }) => (
+const MessagesList: React.FC<{ messages: any[] }> = ({ messages }) => (
   <div className="space-y-4">
     {messages.length > 0 ? (
       messages.map((message) => (
@@ -394,13 +383,7 @@ const MessagesList = ({ messages }) => (
                 </div>
                 <div>
                   <h4 className="text-lg font-semibold text-white">{message.subject}</h4>
-                  <p className="text-sm text-gray-400">{new Date(message.sentAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}</p>
+                  <p className="text-sm text-gray-400">{new Date(message.sentAt).toLocaleString()}</p>
                 </div>
               </div>
               <span className="inline-block bg-blue-500/20 text-blue-400 text-xs px-3 py-1 rounded-full border border-blue-500/30">

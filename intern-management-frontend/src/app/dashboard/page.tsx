@@ -1,64 +1,61 @@
-"use client";
+'use client';
 
-import { Suspense } from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getInternCount, getActiveInternCount, getUpcomingEndDatesCount, getAllInterns, deleteIntern, updateIntern, batchImport, getMessagesFromHR } from '../../services/internService';
+import {
+  getInternCount,
+  getActiveInternCount,
+  getUpcomingEndDatesCount,
+  getAllInterns,
+  deleteIntern,
+  updateIntern,
+  batchImport,
+  getMessagesFromHR,
+  getAllDocuments,
+  downloadDocument,
+} from '../../services/internService';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import Navbar from '../../components/Navbar';
 import DataTable from '../../components/DataTable';
-import FileDropzone from '../../components/FileDropzone';
 import MessageForm from '../../components/MessageForm';
+import HeroSection from '../../components/HeroSection';
+import SearchFilters from '../../components/SearchFilters';
 
-// Loading component
-function DashboardLoading() {
-  return (
-    <div className="min-h-screen bg-white">
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-gray-900 text-lg font-medium">Loading dashboard...</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Main dashboard content component
-function DashboardContent() {
+const DashboardPage = () => {
   const token = useRequireAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState({});
-  const [messageInternIds, setMessageInternIds] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [selectedInternIds, setSelectedInternIds] = useState([]);
-  const [viewMode, setViewMode] = useState('active');
+  const [filters, setFilters] = useState<any>({});
+  const [messageInternIds, setMessageInternIds] = useState<number[] | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedInternIds, setSelectedInternIds] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<string>('active');
   const size = 10;
 
   const queryClient = useQueryClient();
 
-  // Fetch notifications
+  // Notifications
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getMessagesFromHR(),
   });
 
-  // Filter for INTERNSHIP_ENDING notifications
   const internshipEndingNotifications = useMemo(() => {
-    return notificationsData?.data.content?.filter(
-      notif => notif.messageType === 'INTERNSHIP_ENDING' || notif.messageType === 'INTERN_TO_HR'
-    ) || [];
+    return (
+      notificationsData?.data?.content?.filter(
+        (notif: any) => notif.messageType === 'INTERNSHIP_ENDING' || notif.messageType === 'INTERN_TO_HR'
+      ) || []
+    );
   }, [notificationsData]);
 
-  // Sync viewMode with URL query parameter
+  // Sync viewMode with URL query parameter (support docs view)
   useEffect(() => {
     const view = searchParams.get('view');
-    if (view === 'all' || view === 'active' || view === 'upcoming') {
+    if (view === 'all' || view === 'active' || view === 'upcoming' || view === 'docs') {
       setViewMode(view);
     } else {
       setViewMode('active');
@@ -66,10 +63,18 @@ function DashboardContent() {
     }
   }, [searchParams, router]);
 
-  // Handle success message from URL (e.g., after creating an intern)
+  // handle success query param
   useEffect(() => {
-    if (searchParams.get('success') === 'created') {
+    const success = searchParams.get('success');
+    if (success === 'created') {
       setSuccessMessage('Intern added successfully!');
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+        router.replace('/dashboard', undefined, { shallow: true });
+      }, 5000);
+      return () => clearTimeout(timer);
+    } else if (success === 'updated') {
+      setSuccessMessage('Intern updated successfully!');
       const timer = setTimeout(() => {
         setSuccessMessage(null);
         router.replace('/dashboard', undefined, { shallow: true });
@@ -78,25 +83,33 @@ function DashboardContent() {
     }
   }, [searchParams, router]);
 
-  // Reset page when viewMode changes
-  useEffect(() => {
-    setPage(0);
-  }, [viewMode]);
-
-  // Fetch intern statistics
+  // Stats & interns queries
   const { data: totalInterns } = useQuery({ queryKey: ['totalInterns'], queryFn: getInternCount });
   const { data: activeInterns } = useQuery({ queryKey: ['activeInterns'], queryFn: getActiveInternCount });
   const { data: upcomingEndDates } = useQuery({ queryKey: ['upcomingEndDates'], queryFn: getUpcomingEndDatesCount });
-  
-  // Fetch all interns
+
   const { data: allInternsData, isLoading } = useQuery({
     queryKey: ['allInterns'],
     queryFn: getAllInterns,
   });
 
-  // Mutation for terminating an intern
+  // --- NEW: documents for HR ---
+  const [docsPage, setDocsPage] = useState(0);
+  const [docsSize, setDocsSize] = useState(20);
+  const {
+    data: docsData,
+    isLoading: docsLoading,
+    isError: docsError,
+  } = useQuery({
+    queryKey: ['allDocuments', docsPage, docsSize],
+    queryFn: () => getAllDocuments(docsPage, docsSize),
+    enabled: viewMode === 'docs', // only fetch when in docs view
+    keepPreviousData: true,
+  });
+
+  // terminate intern mutation
   const terminateInternMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: number) => {
       const today = new Date().toISOString().split('T')[0];
       const data = { status: 'TERMINATED', endDate: today };
       await updateIntern(id, data);
@@ -114,9 +127,9 @@ function DashboardContent() {
     },
   });
 
-  // Mutation for batch import
+  // batch import mutation
   const uploadMutation = useMutation({
-    mutationFn: (file) => {
+    mutationFn: (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
       return batchImport(formData);
@@ -130,102 +143,99 @@ function DashboardContent() {
       setTimeout(() => setSuccessMessage(null), 5000);
       setErrorMessage(null);
     },
-    onError: (error) => {
-      setErrorMessage(error.response.data.message || 'Failed to upload Excel file. Please try again.');
-      console.log('Error uploading file:', error.response.data);
+    onError: (error: any) => {
+      setErrorMessage(error?.response?.data?.message || 'Failed to upload Excel file. Please try again.');
+      console.log('Error uploading file:', error?.response?.data);
     },
   });
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to terminate this intern?')) {
       terminateInternMutation.mutate(id);
     }
   };
 
-  const handleFileDrop = (acceptedFiles) => {
+  const handleFileDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
       uploadMutation.mutate(file);
     }
   };
 
-  // Filter and paginate intern data
+  // Filter + paginate interns (keeps same logic)
   const { paginatedInterns, totalPages, filteredCount } = useMemo(() => {
     if (!allInternsData?.data) return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
-    
-    let filtered = Array.isArray(allInternsData.data) 
-      ? allInternsData.data 
-      : Array.isArray(allInternsData.data.content) 
-      ? allInternsData.data.content 
+
+    let filtered = Array.isArray(allInternsData.data)
+      ? allInternsData.data
+      : Array.isArray(allInternsData.data.content)
+      ? allInternsData.data.content
       : Array.isArray(allInternsData.data.interns)
       ? allInternsData.data.interns
       : [];
 
     if (!Array.isArray(filtered)) {
-      console.error('Expected array but got:', typeof filtered, filtered);
       return { paginatedInterns: [], totalPages: 0, filteredCount: 0 };
     }
-    
+
     if (search.trim()) {
       const searchLower = search.toLowerCase().trim();
-      filtered = filtered.filter(intern => 
-        intern.name?.toLowerCase().includes(searchLower) ||
-        intern.university?.toLowerCase().includes(searchLower) ||
-        intern.department?.toLowerCase().includes(searchLower) ||
-        intern.email?.toLowerCase().includes(searchLower)
+      filtered = filtered.filter(
+        (intern) =>
+          intern.name?.toLowerCase().includes(searchLower) ||
+          intern.university?.toLowerCase().includes(searchLower) ||
+          intern.department?.toLowerCase().includes(searchLower) ||
+          intern.email?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (filters.university?.trim()) {
-      filtered = filtered.filter(intern => 
+      filtered = filtered.filter((intern) =>
         intern.university?.toLowerCase().includes(filters.university.toLowerCase().trim())
       );
     }
-    
+
     if (filters.department?.trim()) {
-      filtered = filtered.filter(intern => 
+      filtered = filtered.filter((intern) =>
         intern.department?.toLowerCase().includes(filters.department.toLowerCase().trim())
       );
     }
-    
+
     if (filters.startDateFrom) {
-      filtered = filtered.filter(intern => 
-        new Date(intern.startDate) >= new Date(filters.startDateFrom)
-      );
+      filtered = filtered.filter((intern) => new Date(intern.startDate) >= new Date(filters.startDateFrom));
     }
-    
+
     if (viewMode === 'active') {
-      filtered = filtered.filter(intern => intern.status === 'ACTIVE');
+      filtered = filtered.filter((intern) => intern.status === 'ACTIVE');
     } else if (viewMode === 'upcoming') {
       const today = new Date();
       const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(intern => 
-        intern.status === 'ACTIVE' &&
-        new Date(intern.endDate) >= today &&
-        new Date(intern.endDate) <= sevenDaysFromNow
+      filtered = filtered.filter(
+        (intern) =>
+          intern.status === 'ACTIVE' && new Date(intern.endDate) >= today && new Date(intern.endDate) <= sevenDaysFromNow
       );
     }
 
     const totalPages = Math.ceil(filtered.length / size);
     const startIndex = page * size;
     const paginatedInterns = filtered.slice(startIndex, startIndex + size);
-    
+
     return { paginatedInterns, totalPages, filteredCount: filtered.length };
   }, [allInternsData?.data, search, filters, page, size, viewMode]);
 
-  const handleSearchChange = (value) => {
+  const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(0);
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
     setPage(0);
   };
 
   if (!token) return null;
 
-  if (isLoading) {
+  if (isLoading && viewMode !== 'docs') {
     return (
       <div className="min-h-screen bg-white">
         <Navbar notifications={internshipEndingNotifications} />
@@ -239,254 +249,262 @@ function DashboardContent() {
     );
   }
 
-  const handleEdit = (id) => router.push(`/interns/${id}`);
-  const handleSendMessage = (id) => setMessageInternIds([id]);
-
-  const onToggleSelect = (id) => {
-    setSelectedInternIds(prev => 
-      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
-    );
-  };
-
-  const onSelectAll = (select) => {
-    if (select) {
-      setSelectedInternIds(prev => {
-        const newSelected = new Set(prev);
-        paginatedInterns.forEach(intern => newSelected.add(intern.id));
-        return Array.from(newSelected);
-      });
-    } else {
-      setSelectedInternIds(prev => prev.filter(id => !paginatedInterns.some(intern => intern.id === id)));
+  // --- helper: download doc ---
+  const handleDownloadDoc = async (id: number, filename?: string) => {
+    try {
+      const res = await downloadDocument(id);
+      const blob = new Blob([res.data], { type: res.data.type || 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'document';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed', err);
+      alert('Download failed');
     }
   };
 
-  const handleCreate = () => router.push('/interns/new');
+  const handleEdit = (id: number) => router.push(`/interns/${id}`);
+  const handleSendMessage = (id: number) => setMessageInternIds([id]);
+
+  const onToggleSelect = (id: number) => {
+    setSelectedInternIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  };
+
+  const onSelectAll = (select: boolean) => {
+    if (select) {
+      setSelectedInternIds((prev) => {
+        const newSelected = new Set(prev);
+        paginatedInterns.forEach((intern) => newSelected.add(intern.id));
+        return Array.from(newSelected);
+      });
+    } else {
+      setSelectedInternIds((prev) => prev.filter((id) => !paginatedInterns.some((intern) => intern.id === id)));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar notifications={internshipEndingNotifications} />
-      
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-300/10 to-blue-300/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Intern Management
-              <span className="text-orange-500 ml-2">Dashboard</span>
-            </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Streamline your internship program with advanced analytics and seamless management tools
-            </p>
-          </div>
 
+      {/* Only show HeroSection if not in docs view */}
+      {viewMode !== 'docs' && (
+        <HeroSection
+          totalInterns={totalInterns}
+          activeInterns={activeInterns}
+          upcomingEndDates={upcomingEndDates}
+          viewMode={viewMode}
+          setViewMode={(v: string) => {
+            setViewMode(v);
+            // update url
+            router.replace(`/dashboard?view=${v}#table`, undefined, { shallow: true });
+          }}
+          successMessage={successMessage}
+          errorMessage={errorMessage}
+        />
+      )}
+
+      {/* Documents view - full page layout */}
+      {viewMode === 'docs' ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Success/Error messages for docs view */}
           {successMessage && (
-            <div className="mb-8 p-4 bg-green-500/20 border border-green-500 rounded-2xl text-center text-green-500 font-medium animate-fade-in">
-              {successMessage}
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800">{successMessage}</p>
             </div>
           )}
-
           {errorMessage && (
-            <div className="mb-8 p-4 bg-red-500/20 border border-red-500 rounded-2xl text-center text-red-500 font-medium animate-fade-in">
-              {errorMessage}
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{errorMessage}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'all' ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('all');
-                router.push('/dashboard?view=all#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Total Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{totalInterns?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'active' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('active');
-                router.push('/dashboard?view=active#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Active Interns</p>
-                  <p className="text-4xl font-bold text-white mt-2">{activeInterns?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'upcoming' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
-              onClick={() => {
-                setViewMode('upcoming');
-                router.push('/dashboard?view=upcoming#table');
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-100 text-sm uppercase tracking-wide font-medium">Upcoming End Dates</p>
-                  <p className="text-4xl font-bold text-white mt-2">{upcomingEndDates?.data || 0}</p>
-                </div>
-                <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        {selectedInternIds.length > 0 && (
-          <div className="mb-4 p-4 bg-gray-950 rounded-2xl border border-gray-700 flex items-center justify-between">
-            <span className="text-white">{selectedInternIds.length} interns selected</span>
-            <button
-              onClick={() => setMessageInternIds(selectedInternIds)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Send Message to Selected
-            </button>
-          </div>
-        )}
-
-        <div className="relative bg-gray-950 shadow-xl border border-orange-500/50 rounded-2xl p-8 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-blue-500/10 rounded-2xl"></div>
-          <div className="relative">
-            <h2 className="text-2xl font-semibold text-white mb-6">Search & Filters</h2>
-            
-            <div className="space-y-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search interns by name, university, or department..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">University</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by university"
-                    onChange={(e) => handleFilterChange('university', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">Start Date</label>
-                  <input
-                    type="date"
-                    onChange={(e) => handleFilterChange('startDateFrom', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-100 mb-2">Department</label>
-                  <input
-                    type="text"
-                    placeholder="Filter by department"
-                    onChange={(e) => handleFilterChange('department', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-orange-500/70 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-300 shadow-md hover:shadow-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleCreate}
-                  className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg cursor-pointer"
+          <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold text-white">Documents</h1>
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-300">Page {docsPage + 1}</div>
+                <select 
+                  value={docsSize} 
+                  onChange={(e) => { setDocsSize(Number(e.target.value)); setDocsPage(0); }} 
+                  className="bg-gray-800 text-white rounded px-2 py-1"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-                <div className="flex-1">
-                  <FileDropzone onDrop={handleFileDrop} />
-                </div>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
               </div>
             </div>
+
+            {docsLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-white text-lg font-medium">Loading documents...</span>
+                </div>
+              </div>
+            ) : docsError ? (
+              <div className="text-center py-12">
+                <div className="text-red-400 text-lg">Failed to load documents</div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-sm text-gray-400 border-b border-gray-700">
+                      <th className="py-3 px-4">#</th>
+                      <th className="py-3 px-4">Original name</th>
+                      <th className="py-3 px-4">Type</th>
+                      <th className="py-3 px-4">Intern</th>
+                      <th className="py-3 px-4">Size</th>
+                      <th className="py-3 px-4">Uploaded At</th>
+                      <th className="py-3 px-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {docsData?.data?.content?.length ? (
+                      docsData.data.content.map((doc: any, idx: number) => (
+                        <tr key={doc.id} className="border-b border-gray-800 hover:bg-gray-900 transition-colors">
+                          <td className="py-4 px-4 text-gray-300">{docsPage * docsSize + idx + 1}</td>
+                          <td className="py-4 px-4 text-white font-medium">{doc.originalFileName}</td>
+                          <td className="py-4 px-4">
+                            <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">
+                              {doc.type}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-gray-300">{doc.internName}</td>
+                          <td className="py-4 px-4 text-gray-300">{(doc.fileSize / 1024).toFixed(2)} KB</td>
+                          <td className="py-4 px-4 text-gray-300">{new Date(doc.uploadedAt).toLocaleString()}</td>
+                          <td className="py-4 px-4">
+                            <button
+                              onClick={() => handleDownloadDoc(doc.id, doc.originalFileName)}
+                              className="px-4 py-2 border border-gray-600 rounded-md text-sm text-white hover:bg-gray-800 transition-colors"
+                            >
+                              Download
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="py-12 px-4 text-center text-gray-400" colSpan={7}>
+                          <div className="flex flex-col items-center">
+                            <div className="text-lg mb-2">No documents found</div>
+                            <div className="text-sm">Documents will appear here once interns upload them.</div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* Pagination controls */}
+                <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-700">
+                  <div className="text-sm text-gray-300">
+                    Total: {docsData?.data?.totalElements ?? 0} documents
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      disabled={docsPage === 0} 
+                      onClick={() => setDocsPage((p) => Math.max(0, p - 1))} 
+                      className="px-4 py-2 bg-white text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center px-4 py-2 text-white">
+                      Page {docsPage + 1} of {docsData?.data?.totalPages ?? 1}
+                    </div>
+                    <button 
+                      disabled={(docsPage + 1) >= (docsData?.data?.totalPages ?? 1)} 
+                      onClick={() => setDocsPage((p) => p + 1)} 
+                      className="px-4 py-2 bg-white text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {viewMode === 'all' ? 'All Interns' : viewMode === 'active' ? 'Active Interns' : 'Interns with Upcoming End Dates'}
-            </h2>
-            <div className="text-sm text-gray-300">
-              Showing {paginatedInterns.length} of {filteredCount} filtered interns ({totalInterns?.data || 0} total)
+      ) : (
+        // Regular dashboard layout
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          {selectedInternIds.length > 0 && (
+            <div className="mb-4 p-4 bg-gray-950 rounded-2xl border border-gray-700 flex items-center justify-between">
+              <span className="text-white">{selectedInternIds.length} interns selected</span>
+              <button
+                onClick={() => setMessageInternIds(selectedInternIds)}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Send Message to Selected
+              </button>
             </div>
-          </div>
-          
-          <DataTable
-            interns={paginatedInterns}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onSendMessage={handleSendMessage}
-            selectedInternIds={selectedInternIds}
-            onToggleSelect={onToggleSelect}
-            onSelectAll={onSelectAll}
+          )}
+
+          <SearchFilters 
+            search={search} 
+            onSearchChange={handleSearchChange} 
+            onFilterChange={handleFilterChange} 
+            onFileDrop={handleFileDrop} 
           />
 
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-300">
-            <div className="text-sm text-gray-100">
-              Page {page + 1} of {totalPages}
+          <div className="bg-gray-950 backdrop-blur-sm border border-gray-600 rounded-2xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                {viewMode === 'all'
+                  ? 'All Interns'
+                  : viewMode === 'active'
+                  ? 'Active Interns'
+                  : 'Interns with Upcoming End Dates'}
+              </h2>
+
+              <div className="text-sm text-gray-300">
+                Showing {paginatedInterns.length} of {filteredCount} filtered interns ({totalInterns?.data || 0} total)
+              </div>
             </div>
-            <div className="flex space-x-4">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-                className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                disabled={page === totalPages - 1}
-                onClick={() => setPage(page + 1)}
-                className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+
+            <DataTable
+              interns={paginatedInterns}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onSendMessage={handleSendMessage}
+              selectedInternIds={selectedInternIds}
+              onToggleSelect={onToggleSelect}
+              onSelectAll={onSelectAll}
+            />
+
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-300">
+              <div className="text-sm text-gray-900">Page {page + 1} of {totalPages}</div>
+              <div className="flex space-x-4">
+                <button 
+                  disabled={page === 0} 
+                  onClick={() => setPage(page - 1)} 
+                  className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg disabled:opacity-50"
+                >
+                  Prev
+                </button>
+                <button 
+                  disabled={page === totalPages - 1} 
+                  onClick={() => setPage(page + 1)} 
+                  className="p-2 bg-white hover:bg-gray-900 text-gray-900 rounded-lg disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {messageInternIds && (
-        <MessageForm 
-          internIds={messageInternIds} 
-          onClose={() => setMessageInternIds(null)} 
+        <MessageForm
+          internIds={messageInternIds}
+          onClose={() => setMessageInternIds(null)}
           onSuccess={() => {
             setSuccessMessage(messageInternIds.length > 1 ? 'Bulk message sent successfully!' : 'Message sent successfully!');
             setTimeout(() => setSuccessMessage(null), 5000);
@@ -495,17 +513,6 @@ function DashboardContent() {
       )}
     </div>
   );
-}
-
-// Main dashboard component with Suspense wrapper
-const DashboardPage = () => {
-  return (
-    <Suspense fallback={<DashboardLoading />}>
-      <DashboardContent />
-    </Suspense>
-  );
 };
-
-export const dynamic = 'force-dynamic';
 
 export default DashboardPage;
