@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,7 +23,22 @@ import MessageForm from '../../components/MessageForm';
 import HeroSection from '../../components/HeroSection';
 import SearchFilters from '../../components/SearchFilters';
 
-const DashboardPage = () => {
+// Loading component
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-gray-900 text-lg font-medium">Loading dashboard...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main dashboard content component
+function DashboardContent() {
   const token = useRequireAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -513,6 +529,17 @@ const DashboardPage = () => {
       )}
     </div>
   );
+}
+
+// Main dashboard component with Suspense wrapper
+const DashboardPage = () => {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
+  );
 };
+
+export const dynamic = 'force-dynamic';
 
 export default DashboardPage;
