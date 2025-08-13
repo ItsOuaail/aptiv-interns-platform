@@ -62,7 +62,7 @@ function DashboardContent() {
       setViewMode(view);
     } else {
       setViewMode('active');
-      router.replace('/dashboard?view=active', undefined, { shallow: true });
+      router.replace('/dashboard?view=active#table', undefined, { shallow: true });
     }
   }, [searchParams, router]);
 
@@ -296,7 +296,7 @@ function DashboardContent() {
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'all' ? 'border-orange-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
               onClick={() => {
                 setViewMode('all');
-                router.push('/dashboard?view=all');
+                router.push('/dashboard?view=all#table');
               }}
             >
               <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ function DashboardContent() {
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'active' ? 'border-green-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
               onClick={() => {
                 setViewMode('active');
-                router.push('/dashboard?view=active');
+                router.push('/dashboard?view=active#table');
               }}
             >
               <div className="flex items-center justify-between">
@@ -336,7 +336,7 @@ function DashboardContent() {
               className={`bg-gray-950 backdrop-blur-sm border ${viewMode === 'upcoming' ? 'border-blue-500' : 'border-gray-700'} rounded-2xl p-8 hover:bg-gray-800 transition-all duration-300 cursor-pointer`}
               onClick={() => {
                 setViewMode('upcoming');
-                router.push('/dashboard?view=upcoming');
+                router.push('/dashboard?view=upcoming#table');
               }}
             >
               <div className="flex items-center justify-between">
