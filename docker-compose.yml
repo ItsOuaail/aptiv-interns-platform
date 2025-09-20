@@ -32,6 +32,7 @@ services:
       dockerfile: Dockerfile
     container_name: aptiv-backend
     restart: unless-stopped
+    user: "0" 
     environment:
       # Database configuration
       DB_HOST: postgres
