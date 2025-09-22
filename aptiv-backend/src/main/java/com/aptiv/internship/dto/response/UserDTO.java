@@ -13,7 +13,9 @@ public class UserDTO {
     private String lastName;
     private String role;
     private boolean active;
+    private boolean shouldChangePassword; // New field
 
+    // Your existing constructor
     public UserDTO(Long id, String email, String firstName, String lastName, User.Role role, Object active) {
         this.id = id;
         this.email = email;
@@ -21,6 +23,17 @@ public class UserDTO {
         this.lastName = lastName;
         this.role = role.toString();
         this.active = (Boolean) active;
+        this.shouldChangePassword = false; // default
+    }
 
+    // New constructor with shouldChangePassword
+    public UserDTO(Long id, String email, String firstName, String lastName, User.Role role, Object active, boolean shouldChangePassword) {
+        this.id = id;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.role = role.toString();
+        this.active = (Boolean) active;
+        this.shouldChangePassword = shouldChangePassword;
     }
 }

@@ -42,6 +42,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -63,6 +66,11 @@ public class User implements UserDetails {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.active = true;
+    }
+
+    // Helper method to check if user should change password (interns who never changed it)
+    public boolean shouldChangePassword() {
+        return this.role == Role.INTERN && this.passwordChangedAt == null;
     }
 
     @Override
@@ -111,5 +119,4 @@ public class User implements UserDetails {
     public enum Role {
         HR, INTERN
     }
-    // Remove setPassword from entity; handle in service
 }
