@@ -16,13 +16,12 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8080/api/auth/login', { email, password });
-      const { token } = response.data;
-      login(token);
+      const { token, user } = response.data; // Extract user
+      login(token, user); // Pass user to login
       console.log('Login successful:', response.data);
-      if(response.data.user.role === 'HR') {
+      if (user.role === 'HR') {
         router.push('/dashboard');
-      }
-      else if(response.data.user.role === 'INTERN') {
+      } else if (user.role === 'INTERN') {
         router.push('/internSide');
       }
     } catch (err) {

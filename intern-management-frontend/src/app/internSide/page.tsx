@@ -1,19 +1,35 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth for user
 import Navbar from '../../components/InternNavbar';
 import MessageFormIntern from '../../components/MessageFormIntern';
 import InternDocuments from '../../components/InternDocuments';
 import { getInternDetails, getMessagesFromHR, sendMessageToHR } from '../../services/internService';
+import axios from 'axios';
 
 const InternDashboard: React.FC = () => {
-  const token = useRequireAuth();
+  const { token } = useRequireAuth();
+  const { user, login } = useAuth(); // Get user and login (to update user)
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (user?.shouldChangePassword) {
+      setShowModal(true);
+    }
+  }, [user]);
 
   const {
     data: internDetails,
@@ -59,6 +75,44 @@ const InternDashboard: React.FC = () => {
       setTimeout(() => setErrorMessage(null), 5000);
     },
   });
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalError(null);
+    setModalSuccess(null);
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setModalError('All fields are required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setModalError('New passwords do not match.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        'http://localhost:8080/api/auth/change-password',
+        { currentPassword, newPassword, confirmPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        setModalSuccess(response.data.message);
+        // Update user in context and localStorage
+        const updatedUser = { ...user, shouldChangePassword: false };
+        login(token!, updatedUser); // Reuse login to update
+        setTimeout(() => {
+          setShowModal(false);
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+        }, 2000);
+      }
+    } catch (err: any) {
+      setModalError(err.response?.data?.message || 'Failed to change password. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!token) return null;
 
@@ -286,6 +340,58 @@ const InternDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Password Change Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-md mx-4">
+            <h2 className="text-2xl font-bold text-white mb-4">Change Your Password</h2>
+            <p className="text-gray-300 mb-6">For security, please change your password.</p>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <input
+                type="password"
+                placeholder="Current Password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <input
+                type="password"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <input
+                type="password"
+                placeholder="Confirm New Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              {modalError && <p className="text-red-500 text-sm">{modalError}</p>}
+              {modalSuccess && <p className="text-green-500 text-sm">{modalSuccess}</p>}
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-xl hover:bg-gray-600"
+                  disabled={isSubmitting}
+                >
+                  Skip
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

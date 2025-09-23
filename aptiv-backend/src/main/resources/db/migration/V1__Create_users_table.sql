@@ -7,6 +7,7 @@ CREATE TABLE users (
                        last_name VARCHAR(255) NOT NULL,
                        role VARCHAR(50) NOT NULL CHECK (role IN ('HR', 'INTERN')),
                        active BOOLEAN NOT NULL DEFAULT TRUE,
+                       password_changed_at TIMESTAMP,
                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

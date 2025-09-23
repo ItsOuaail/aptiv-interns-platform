@@ -601,6 +601,7 @@ public class InternService {
                         newUser.setRole(roles.contains("HR") ? User.Role.HR : User.Role.INTERN);
                         newUser.setCreatedAt(LocalDateTime.now());
                         newUser.setUpdatedAt(LocalDateTime.now());
+                        newUser.setPasswordChangedAt(LocalDateTime.now());
                         return userRepository.save(newUser);
                     });
         } catch (Exception e) {
