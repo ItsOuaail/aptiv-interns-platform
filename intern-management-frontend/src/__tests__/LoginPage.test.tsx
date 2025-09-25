@@ -9,8 +9,15 @@ describe('internService', () => {
 
     await getInterns(0, 10, 'test', { university: 'XYZ' });
 
-    expect(api.get).toHaveBeenCalledWith('/interns', {
-      params: { page: 0, size: 10, search: 'test', university: 'XYZ' },
-    });
+    expect(api.get).toHaveBeenCalledWith('/interns/search', {
+  params: { 
+    page: 0, 
+    size: 10, 
+    keyword: 'test', 
+    university: 'XYZ',
+    department: undefined,
+    startDateFrom: undefined
+  },
+});
   });
 });
