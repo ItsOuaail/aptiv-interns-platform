@@ -2,7 +2,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (unchanged)
   postgres:
     image: postgres:15-alpine
     container_name: aptiv-postgres
@@ -25,11 +25,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Spring Boot Backend
+  # Spring Boot Backend (updated to pull from Docker Hub)
   backend:
-    build:
-      context: ./aptiv-backend
-      dockerfile: Dockerfile
+    image: ouaail/aptiv-backend:latest  # Pull pre-built image instead of local build
     container_name: aptiv-backend
     restart: unless-stopped
     user: "0" 
@@ -79,16 +77,14 @@ services:
       retries: 5
       start_period: 60s
 
-  # Next.js Frontend
+  # Next.js Frontend (updated to pull from Docker Hub)
   frontend:
-    build:
-      context: ./intern-management-frontend
-      dockerfile: Dockerfile
+    image: ouaail/aptiv-frontend:latest  # Pull pre-built image instead of local build
     container_name: aptiv-frontend
     restart: unless-stopped
     environment:
-      # API URL for backend communication
-      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+      # API URL for backend communication (updated for container networking)
+      NEXT_PUBLIC_API_URL: http://backend:8080/api
       NODE_ENV: production
     ports:
       - "3000:3000"
