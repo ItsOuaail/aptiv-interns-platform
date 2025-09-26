@@ -20,13 +20,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'  # Matches your Dockerfile
+          node-version: '18'
 
       - name: Install dependencies
-        run: npm install  # Changed to npm install for flexibility
+        run: npm install
+
+      - name: Run tests
+        run: npm test
 
       - name: Run lint
-        run: npm run lint || true  # Made optional to avoid failure
+        run: npm run lint
 
       - name: Build frontend
         run: npm run build
@@ -82,3 +85,29 @@ jobs:
           file: ./aptiv-backend/Dockerfile
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/aptiv-backend:latest
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Azure Web App (Frontend)
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'aptiv-frontend-app'  # Your App Service name
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
+          images: 'ouaail/aptiv-frontend:latest'  # Your Docker Hub image
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: build-backend
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Azure Web App (Backend)
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'aptiv-backend-app'  # Your App Service name
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+          images: 'ouaail/aptiv-backend:latest'  # Your Docker Hub image
