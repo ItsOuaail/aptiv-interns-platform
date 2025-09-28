@@ -25,17 +25,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Debug React version
-        run: npm ls react
-
       - name: Run lint
         run: npm run lint || true
 
       - name: Build frontend
-        run: npm run build || true  # Optional to bypass failure
+        run: npm run build
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
+          NEXT_IGNORE_LEGACY_KEY_VALUE: 1
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
