@@ -33,7 +33,6 @@ jobs:
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
-          NEXT_IGNORE_LEGACY_KEY_VALUE: 1
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
